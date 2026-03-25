@@ -3,13 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>지형 물흐름 분석기 GitHub용</title>
+<title>물아 흘러라</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Black+Han+Sans&display=swap');
 :root{--bg:#0a0e1a;--panel:#111827;--panel2:#1a2235;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff9f;--accent3:#ff6b35;--text:#e2e8f0;--dim:#64748b;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-header{display:flex;align-items:center;gap:12px;padding:9px 18px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;}
+header{display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--panel);border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#0a0e1a,#00d4ff,#00ff9f,#0a0e1a) 1;flex-shrink:0;height:52px;position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.04) 50%,transparent 100%);animation:hshine 4s ease-in-out infinite;}
+@keyframes hshine{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
+.htitle{display:flex;align-items:center;gap:0;position:relative;}
+.htitle h1{font-family:'Black Han Sans',sans-serif;font-size:22px;font-weight:400;letter-spacing:2px;background:linear-gradient(90deg,#00d4ff,#00ff9f,#00d4ff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:flowtext 3s linear infinite,titlein .6s ease both;}
+@keyframes flowtext{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+@keyframes titlein{from{opacity:0;transform:translateY(-8px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.htitle .wave{font-size:13px;color:var(--accent);font-family:'JetBrains Mono',monospace;opacity:0.6;margin-left:10px;animation:wavepulse 2s ease-in-out infinite;}
+@keyframes wavepulse{0%,100%{opacity:0.4;transform:scaleX(1)}50%{opacity:1;transform:scaleX(1.08)}}
 header h1{font-size:14px;font-weight:700;color:var(--accent);}
 .hsp{flex:1;}
 .hstat{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);display:flex;gap:16px;}
@@ -54,7 +62,14 @@ select:focus{border-color:var(--accent);}
 .legbox{margin-top:6px;}
 .legstrip{display:flex;height:11px;border-radius:3px;overflow:hidden;margin:3px 0;}
 .leglabel{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-.ca{flex:1;position:relative;overflow:hidden;background:#050810;}
+.ca-drop{position:absolute;inset:0;background:rgba(0,212,255,0.08);border:3px dashed var(--accent);border-radius:12px;display:none;align-items:center;justify-content:center;z-index:20;pointer-events:none;}
+.ca-drop.active{display:flex;}
+.ca-drop-inner{text-align:center;color:var(--accent);}
+.ca-drop-inner .drop-ico{font-size:56px;animation:dropbounce .7s ease-in-out infinite alternate;}
+.ca-drop-inner p{font-size:16px;font-weight:700;margin-top:10px;letter-spacing:1px;}
+@keyframes dropbounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+.author-badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(100,116,139,0.7);letter-spacing:2px;pointer-events:none;white-space:nowrap;z-index:5;}
+.author-badge span{color:rgba(0,212,255,0.5);}
 #mc{position:absolute;top:0;left:0;}
 .tbar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:rgba(10,14,26,.92);border:1px solid var(--border);border-radius:9px;padding:7px 11px;backdrop-filter:blur(8px);z-index:10;}
 .tb{padding:6px 12px;border-radius:6px;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--dim);transition:all .15s;display:flex;align-items:center;gap:4px;}
@@ -67,6 +82,28 @@ select:focus{border-color:var(--accent);}
 .empty h2{font-size:16px;font-weight:500;margin-bottom:7px;color:#475569;}
 .empty p{font-size:12px;line-height:1.7;color:#334155;}
 .rp{width:292px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.rp-bottom{display:flex;flex-direction:column;flex:1;overflow:hidden;border-top:1px solid var(--border);}
+.flow-art{height:72px;overflow:hidden;position:relative;background:#050810;}
+#artCanvas{display:block;width:100%;height:100%;}
+/* 명언 박스 */
+.quote-box{margin:10px 13px 0;border:1px solid var(--border);border-radius:8px;background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(0,255,159,0.04));padding:10px 12px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .2s;}
+.quote-box:hover{border-color:var(--accent);}
+.quote-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:8px 8px 0 0;}
+.quote-icon{font-size:14px;margin-bottom:5px;opacity:.7;}
+.quote-text{font-size:11px;color:var(--text);line-height:1.6;font-weight:500;min-height:36px;}
+.quote-num{font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:5px;text-align:right;}
+.quote-hint{font-size:9px;color:var(--dim);text-align:center;margin-top:3px;opacity:.5;}
+/* 사용 순서 박스 */
+.usage-box{margin:8px 13px 0;border:1px solid var(--border);border-radius:8px;background:rgba(26,34,53,0.6);padding:9px 12px;position:relative;}
+.usage-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff6b35,#f59e0b);border-radius:8px 8px 0 0;}
+.usage-box-title{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:7px;}
+.usage-step{display:flex;align-items:flex-start;gap:9px;margin-bottom:5px;font-size:11px;color:var(--text);}
+.usage-step:last-child{margin-bottom:0;}
+.step-num{width:17px;height:17px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#f59e0b);color:#050810;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.usage-step em{display:block;font-style:normal;color:var(--dim);font-size:10px;margin-top:1px;}
+.author-rp{padding:7px 13px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:2px;border-top:1px solid var(--border);text-align:right;margin-top:8px;}
+.author-rp span{color:var(--accent);font-weight:600;}
+.ca{flex:1;position:relative;overflow:hidden;background:#050810;}
 .rphead{padding:10px 13px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
 .badge{font-size:9px;padding:1px 5px;background:var(--panel2);border:1px solid var(--border);border-radius:3px;font-family:'JetBrains Mono',monospace;color:var(--dim);}
 #sc{background:#050810;display:block;}
@@ -79,8 +116,10 @@ select:focus{border-color:var(--accent);}
 </head>
 <body>
 <header>
-  <span>🏔</span>
-  <h1>지형 물흐름 분석기 · GitHub용</h1>
+  <div class="htitle">
+    <h1>물아 흘러라</h1>
+    <span class="wave">〰〰〰〰〰</span>
+  </div>
   <div class="hsp"></div>
   <div class="hstat">
     <div>등고선 <b id="stC">0</b></div>
@@ -125,23 +164,49 @@ select:focus{border-color:var(--accent);}
         </div>
       </div>
       <div class="sec">
-        <div class="sec-title">화살표 설정</div>
+        <div class="sec-title">💧 화살표 설정</div>
         <div class="slrow">
           <label>밀도 <span id="densV">5</span></label>
-          <input type="range" id="dens" min="1" max="10" value="5" oninput="document.getElementById('densV').textContent=this.value;render()">
+          <input type="range" id="dens" min="1" max="20" value="5" oninput="document.getElementById('densV').textContent=this.value;render()">
         </div>
         <div class="slrow">
           <label>크기 <span id="sizeV">14</span>px</label>
-          <input type="range" id="asize" min="6" max="32" value="14" oninput="document.getElementById('sizeV').textContent=this.value;render()">
+          <input type="range" id="asize" min="4" max="60" value="14" oninput="document.getElementById('sizeV').textContent=this.value;render()">
+        </div>
+        <div class="slrow">
+          <label>선 굵기 <span id="lwV">1.3</span>px</label>
+          <input type="range" id="alw" min="1" max="6" step="0.5" value="1.3" oninput="document.getElementById('lwV').textContent=parseFloat(this.value).toFixed(1);render()">
         </div>
         <div class="slrow">
           <label style="margin-bottom:4px">화살표 모양</label>
           <select id="arrowStyle" onchange="render()">
             <option value="classic">▶ 클래식 (채움 삼각형)</option>
-            <option value="open">➤ 오픈 (열린 화살표)</option>
+            <option value="open">➤ 오픈 V형</option>
             <option value="thin">→ 얇은 선형</option>
-            <option value="bold">⬛ 굵은 삼각형</option>
+            <option value="bold">◀ 굵은 넓은 삼각형</option>
+            <option value="fish">⟩ 물고기 꼬리형</option>
+            <option value="cross">✚ 십자 방향형</option>
+            <option value="curve">↷ 곡선 꺽임형</option>
+            <option value="double">» 이중 화살표</option>
           </select>
+        </div>
+        <div class="slrow" style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <label style="margin-bottom:0;flex:1;color:var(--dim);font-size:11px">화살표 색상</label>
+          <input type="color" id="arrowColor" value="#00d4ff" oninput="render()" style="width:36px;height:26px;border:1px solid var(--border);border-radius:4px;background:var(--panel2);cursor:pointer;padding:2px;">
+          <select id="arrowPreset" onchange="applyArrowPreset(this.value)" style="flex:1;margin-bottom:0">
+            <option value="">프리셋</option>
+            <option value="#00d4ff">시안</option>
+            <option value="#00ff9f">민트</option>
+            <option value="#ff6b35">오렌지</option>
+            <option value="#f59e0b">골드</option>
+            <option value="#a78bfa">퍼플</option>
+            <option value="#fb7185">핑크</option>
+            <option value="#ffffff">화이트</option>
+          </select>
+        </div>
+        <div class="slrow">
+          <label>투명도 <span id="alphaV">90</span>%</label>
+          <input type="range" id="arrowAlpha" min="10" max="100" value="90" oninput="document.getElementById('alphaV').textContent=this.value;render()">
         </div>
       </div>
       <div class="sec">
@@ -167,11 +232,18 @@ select:focus{border-color:var(--accent);}
 
   <div class="ca" id="ca">
     <canvas id="mc"></canvas>
+    <div class="ca-drop" id="caDrop">
+      <div class="ca-drop-inner">
+        <div class="drop-ico">💧</div>
+        <p>DXF 파일을 놓으세요</p>
+      </div>
+    </div>
     <div class="empty" id="emp">
       <div class="eico">🗻</div>
       <h2>DXF 파일을 업로드하세요</h2>
       <p>등고선이 포함된 수치지형도 DXF 파일을<br>업로드하거나 샘플 데이터를 사용해보세요</p>
     </div>
+    <div class="author-badge">작성자 : <span>유영대</span></div>
     <div class="minfo">
       X: <span id="cx">-</span> Y: <span id="cy">-</span><br>
       고도: <span id="cz">-</span>m<br>
@@ -196,6 +268,24 @@ select:focus{border-color:var(--accent);}
       </select>
     </div>
     <div class="sinfo" id="sinfo">단면선을 그리면 단면도가 표시됩니다.</div>
+    <div class="rp-bottom">
+      <div class="flow-art" id="flowArt"><canvas id="artCanvas"></canvas></div>
+      <!-- 명언 박스 -->
+      <div class="quote-box" id="quoteBox">
+        <div class="quote-icon">💬</div>
+        <div class="quote-text" id="quoteText">오늘도 좋은 하루!</div>
+        <div class="quote-num" id="quoteNum"></div>
+      </div>
+      <!-- 사용 순서 박스 -->
+      <div class="usage-box">
+        <div class="usage-box-title">📋 사용 순서</div>
+        <div class="usage-step"><span class="step-num">1</span><span>DXF 파일 업로드<br><em>드래그 or 클릭</em></span></div>
+        <div class="usage-step"><span class="step-num">2</span><span>지형 분석 실행<br><em>등고선 → TIN → 흐름</em></span></div>
+        <div class="usage-step"><span class="step-num">3</span><span>단면선 그리기<br><em>두 점 클릭으로 단면 생성</em></span></div>
+        <div class="usage-step"><span class="step-num">4</span><span>DXF / PNG 저장<br><em>화살표·색상 포함 저장</em></span></div>
+      </div>
+      <div class="author-rp">작성자 <span>유영대</span></div>
+    </div>
   </div>
 </div>
 
@@ -838,8 +928,10 @@ function render(){
   if(S.vis.Flow&&S.arrows.length){
     var dens=parseInt(document.getElementById('dens').value);
     var alen=parseInt(document.getElementById('asize').value);
-    var skip=Math.max(1,11-dens);
-    ctx.fillStyle='#00d4ff'; ctx.strokeStyle='#00d4ff'; ctx.lineWidth=1.3;
+    var skip=Math.max(1,21-dens*2);
+    var col=getArrowColor();
+    var lw=parseFloat((document.getElementById('alw')||{value:1.3}).value)||1.3;
+    ctx.fillStyle=col; ctx.strokeStyle=col; ctx.lineWidth=lw;
     for(var ai=0;ai<S.arrows.length;ai++){
       if(ai%skip!==0) continue;
       var a=S.arrows[ai], s=w2s(a.x,a.y);
@@ -870,21 +962,36 @@ function getArrowStyle(){
   var sel=document.getElementById('arrowStyle');
   return sel?sel.value:'classic';
 }
+function getArrowColor(){
+  var el=document.getElementById('arrowColor');
+  var alpha=parseInt((document.getElementById('arrowAlpha')||{value:90}).value)/100;
+  if(!el) return 'rgba(0,212,255,0.9)';
+  var hex=el.value.replace('#','');
+  var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);
+  return 'rgba('+r+','+g+','+b+','+alpha.toFixed(2)+')';
+}
+function applyArrowPreset(v){
+  if(!v) return;
+  document.getElementById('arrowColor').value=v;
+  render();
+}
 function drawArrow(x,y,dx,dy,len){
   var style=getArrowStyle();
+  var lw=parseFloat((document.getElementById('alw')||{value:1.3}).value)||1.3;
+  var col=getArrowColor();
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw;
   var ex=x+dx*len, ey=y+dy*len;
   var ang=Math.atan2(dy,dx);
+
   if(style==='classic'){
-    // 채움 삼각형 헤드
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
     var hl=len*0.42;
-    ctx.beginPath();
-    ctx.moveTo(ex,ey);
+    ctx.beginPath();ctx.moveTo(ex,ey);
     ctx.lineTo(ex-hl*Math.cos(ang-0.38),ey-hl*Math.sin(ang-0.38));
     ctx.lineTo(ex-hl*Math.cos(ang+0.38),ey-hl*Math.sin(ang+0.38));
     ctx.closePath();ctx.fill();
+
   } else if(style==='open'){
-    // 오픈 화살표 (V형)
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
     var hl=len*0.45;
     ctx.beginPath();
@@ -892,8 +999,8 @@ function drawArrow(x,y,dx,dy,len){
     ctx.lineTo(ex,ey);
     ctx.lineTo(ex-hl*Math.cos(ang+0.45),ey-hl*Math.sin(ang+0.45));
     ctx.stroke();
+
   } else if(style==='thin'){
-    // 얇은 선형 - 짧은 사선만
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
     var hl=len*0.32;
     ctx.beginPath();
@@ -901,14 +1008,63 @@ function drawArrow(x,y,dx,dy,len){
     ctx.lineTo(ex,ey);
     ctx.lineTo(ex-hl*Math.cos(ang+0.5),ey-hl*Math.sin(ang+0.5));
     ctx.stroke();
+
   } else if(style==='bold'){
-    // 굵은 삼각형 (짧고 넓은)
     var hl=len*0.55;
-    ctx.beginPath();
-    ctx.moveTo(x,y);
+    ctx.beginPath();ctx.moveTo(x,y);
     ctx.lineTo(ex-hl*Math.cos(ang-0.55),ey-hl*Math.sin(ang-0.55));
     ctx.lineTo(ex,ey);
     ctx.lineTo(ex-hl*Math.cos(ang+0.55),ey-hl*Math.sin(ang+0.55));
+    ctx.closePath();ctx.fill();
+
+  } else if(style==='fish'){
+    // 물고기 꼬리형: 앞은 뾰족, 뒤는 V자 오목
+    var hw=len*0.28;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey); // 앞 끝
+    ctx.lineTo(x+dx*(len*0.3)+dy*hw, y+dy*(len*0.3)-dx*hw);
+    ctx.lineTo(x-dx*(len*0.1), y-dy*(len*0.1)); // 뒤 중심 오목
+    ctx.lineTo(x+dx*(len*0.3)-dy*hw, y+dy*(len*0.3)+dx*hw);
+    ctx.closePath();ctx.fill();
+
+  } else if(style==='cross'){
+    // 십자 방향형: 중심에서 4방향 짧은 선
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+    var hw=len*0.3;
+    ctx.beginPath();
+    ctx.moveTo(ex-dy*hw,ey+dx*hw);ctx.lineTo(ex+dy*hw,ey-dx*hw);ctx.stroke();
+    ctx.beginPath();ctx.arc(ex,ey,len*0.1,0,Math.PI*2);ctx.fill();
+
+  } else if(style==='curve'){
+    // 곡선 꺽임형: quadratic curve + head
+    var cx2=x+dx*len*0.5+dy*len*0.25, cy2=y+dy*len*0.5-dx*len*0.25;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(cx2,cy2,ex,ey);ctx.stroke();
+    var hl=len*0.38;
+    // head direction follows curve tangent at end
+    var tang_x=ex-cx2, tang_y=ey-cy2;
+    var tm=Math.sqrt(tang_x*tang_x+tang_y*tang_y)||1;
+    tang_x/=tm; tang_y/=tm;
+    var tang_ang=Math.atan2(tang_y,tang_x);
+    ctx.beginPath();ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-hl*Math.cos(tang_ang-0.38),ey-hl*Math.sin(tang_ang-0.38));
+    ctx.lineTo(ex-hl*Math.cos(tang_ang+0.38),ey-hl*Math.sin(tang_ang+0.38));
+    ctx.closePath();ctx.fill();
+
+  } else if(style==='double'){
+    // 이중 화살표: 두 개 겹친 화살표
+    var mid_x=x+dx*len*0.5, mid_y=y+dy*len*0.5;
+    var hl=len*0.35;
+    // 첫번째 헤드 (중간)
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(mid_x,mid_y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(mid_x,mid_y);
+    ctx.lineTo(mid_x-hl*Math.cos(ang-0.38),mid_y-hl*Math.sin(ang-0.38));
+    ctx.lineTo(mid_x-hl*Math.cos(ang+0.38),mid_y-hl*Math.sin(ang+0.38));
+    ctx.closePath();ctx.fill();
+    // 두번째 헤드 (끝)
+    ctx.beginPath();ctx.moveTo(mid_x,mid_y);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-hl*Math.cos(ang-0.38),ey-hl*Math.sin(ang-0.38));
+    ctx.lineTo(ex-hl*Math.cos(ang+0.38),ey-hl*Math.sin(ang+0.38));
     ctx.closePath();ctx.fill();
   }
 }
@@ -1293,10 +1449,11 @@ function exportSectionDXF(){
     dxf+=' 10\n'+profile[profile.length-1].x.toFixed(4)+'\n 20\n'+(minZ-4).toFixed(4)+'\n 30\n0\n';
     dxf+=' 40\n'+(zStep*0.4).toFixed(4)+'\n  1\n'+totalD.toFixed(1)+'m\n 72\n1\n';
 
-    // Section title (A1, A2 ...)
+    // Section title (A1, A2 ...) - ASCII only to avoid garbled text in CAD
+    var titleTxt='A'+(si+1)+' Section  Min:'+minZ.toFixed(1)+'m  Max:'+maxZ.toFixed(1)+'m  dH:'+(maxZ-minZ).toFixed(1)+'m';
     dxf+='  0\nTEXT\n  8\n'+lblName+'\n 62\n7\n';
     dxf+=' 10\n'+(offsetX+totalD/2).toFixed(4)+'\n 20\n'+(maxZ+zStep).toFixed(4)+'\n 30\n0\n';
-    dxf+=' 40\n'+(zStep*0.6).toFixed(4)+'\n  1\nA'+(si+1)+' 단면도  최저:'+minZ.toFixed(1)+'m  최고:'+maxZ.toFixed(1)+'m  고저차:'+(maxZ-minZ).toFixed(1)+'m\n 72\n4\n';
+    dxf+=' 40\n'+(zStep*0.6).toFixed(4)+'\n  1\n'+titleTxt+'\n 72\n4\n';
   }
   dxf+='  0\nENDSEC\n  0\nEOF\n';
   var blob=new Blob([dxf],{type:'text/plain'});
@@ -1313,7 +1470,154 @@ function notify(msg,type){
   setTimeout(function(){n.remove();},3200);
 }
 
+// ── QUOTES
+var QUOTES=[
+  {n:1,t:"당신이 할 수 있다고 믿든 할 수 없다고 믿든, 믿는 대로 될 것이다."},
+  {n:2,t:"나 자신에 대한 자신감을 잃으면 온 세상이 나의 적이 된다."},
+  {n:3,t:"절대 포기하지 말라."},
+  {n:4,t:"1퍼센트의 가능성, 그것이 나의 길이다."},
+  {n:5,t:"자신을 믿어라."},
+  {n:6,t:"피할 수 없으면 즐겨라. – 로버트 엘리엇"},
+  {n:7,t:"먼저 자신을 비웃어라."},
+  {n:8,t:"기회는 기다리는 사람에게 잡히지 않는다."},
+  {n:9,t:"어둠 속에서도 빛을 찾으려 노력하라."},
+  {n:10,t:"성공은 다시 일어서는 횟수에 달려 있다."},
+  {n:11,t:"어려움은 새로운 기회를 낳는다."},
+  {n:12,t:"성공은 행동에서 비롯된다."},
+  {n:13,t:"내 비장의 무기는 아직 손안에 있다."},
+  {n:14,t:"큰 희망이 큰 사람을 만든다."},
+  {n:15,t:"인생은 의욕을 갖고 목표를 설정할 때 빛난다."},
+  {n:16,t:"귀는 열고 입은 닫아라."},
+  {n:17,t:"한순간의 결정이 인생을 바꾼다."},
+  {n:18,t:"무조건 믿지 마라. 검증하라."},
+  {n:19,t:"중요한 일을 절대 이메일로 보내지 말라."},
+  {n:20,t:"일이 즐거우면 인생은 낙원이다."},
+  {n:21,t:"행복의 한쪽 문이 닫히면 다른 쪽 문이 열린다."},
+  {n:22,t:"사막이 아름다운 것은 어딘가에 샘이 숨겨져 있기 때문이다."},
+  {n:23,t:"절대 어제를 후회하지 마라."},
+  {n:24,t:"삶이 있는 한 희망은 있다."},
+  {n:25,t:"희망은 사람을 성공으로 이끄는 신앙이다."},
+  {n:26,t:"희망은 어둠 속에서 시작된다."},
+  {n:27,t:"이 또한 지나가리라."},
+  {n:28,t:"잘하고 있어!"},
+  {n:29,t:"수고했다."},
+  {n:30,t:"힘내."},
+  {n:31,t:"밥 먹자."},
+  {n:32,t:"나는 평생 단 하루도 노동을 해 본 적이 없다. 일하는 그 자체가 기쁨이었다."},
+  {n:33,t:"일이 의무라고 생각하면 인생은 지옥이다."},
+  {n:34,t:"자신의 일을 발견한 사람은 행복한 사람이다."},
+  {n:35,t:"우리는 가치를 만들기 위해 일한다."},
+  {n:36,t:"지평선 너머에 더 나은 삶이 있다는 믿음을 고수하라."},
+  {n:37,t:"희망은 가장 좋은 것 중 하나이며, 절대 죽지 않는다."},
+  {n:38,t:"어제와 똑같이 살면서 다른 미래를 기대하는 것은 미친 짓이다."},
+  {n:39,t:"인생은 가까이서 보면 비극이지만, 멀리서 보면 희극이다."},
+  {n:40,t:"당신의 삶을 사랑하라."},
+  {n:41,t:"목표를 달성하는 유일한 방법은 행동하는 것이다."},
+  {n:42,t:"성공한 사람이 되려 하기보다 가치 있는 사람이 되려 하라."},
+  {n:43,t:"작은 일에 성실한 사람은 큰 일에도 성실하다."},
+  {n:44,t:"실패는 성공의 어머니이다."},
+  {n:45,t:"웃음은 가장 좋은 약이다."},
+  {n:46,t:"오늘 할 일을 내일로 미루지 마라."},
+  {n:47,t:"지식보다 중요한 것은 상상력이다."},
+  {n:48,t:"친구가 없는 사람은 외롭다."},
+  {n:49,t:"배우지 않으면 늙는다."},
+  {n:50,t:"인생은 한 번뿐이다."}
+];
+var _qIdx=Math.floor(Math.random()*QUOTES.length);
+function showQuote(q){
+  var el=document.getElementById('quoteText');
+  var en=document.getElementById('quoteNum');
+  if(!el||!en) return;
+  el.style.opacity='0';
+  setTimeout(function(){
+    el.textContent=q.t;
+    en.textContent='No. '+q.n+' / 50';
+    el.style.transition='opacity .6s';
+    el.style.opacity='1';
+  },300);
+}
+showQuote(QUOTES[_qIdx]);
+// 클릭하면 다음 명언
+document.getElementById('quoteBox').addEventListener('click',function(){
+  _qIdx=(_qIdx+1)%QUOTES.length;
+  showQuote(QUOTES[_qIdx]);
+});
+// 8초마다 자동 교체
+setInterval(function(){
+  _qIdx=(_qIdx+1)%QUOTES.length;
+  showQuote(QUOTES[_qIdx]);
+},8000);
+
 setTool('pan');
+
+// ── CANVAS DRAG & DROP
+var ca=document.getElementById('ca');
+var caDrop=document.getElementById('caDrop');
+ca.addEventListener('dragover',function(e){
+  e.preventDefault();
+  var files=e.dataTransfer.items;
+  var hasDxf=false;
+  for(var i=0;i<files.length;i++){if(files[i].kind==='file') hasDxf=true;}
+  if(hasDxf) caDrop.classList.add('active');
+});
+ca.addEventListener('dragleave',function(e){
+  if(!ca.contains(e.relatedTarget)) caDrop.classList.remove('active');
+});
+ca.addEventListener('drop',function(e){
+  e.preventDefault();
+  caDrop.classList.remove('active');
+  var files=e.dataTransfer.files;
+  var dxfFiles=[];
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    if(f.name.toLowerCase().endsWith('.dxf')||f.name.toLowerCase().endsWith('.txt')) dxfFiles.push(f);
+  }
+  if(!dxfFiles.length){notify('DXF 파일만 지원합니다','warn');return;}
+  readFiles(dxfFiles);
+});
+
+// ── FLOW ART (animated wave in right panel bottom)
+(function(){
+  var ac=document.getElementById('artCanvas');
+  if(!ac) return;
+  var rp=ac.parentElement;
+  function resizeArt(){ac.width=rp.clientWidth;ac.height=rp.clientHeight;}
+  resizeArt();
+  window.addEventListener('resize',resizeArt);
+  var actx=ac.getContext('2d');
+  var t=0;
+  function drawArt(){
+    var W=ac.width, H=ac.height;
+    actx.clearRect(0,0,W,H);
+    actx.fillStyle='#050810';actx.fillRect(0,0,W,H);
+    // 여러 물결선
+    var waves=[
+      {amp:10,freq:0.035,spd:0.04,y:H*0.3,col:'rgba(0,212,255,0.55)',lw:1.8},
+      {amp:7, freq:0.05, spd:0.06,y:H*0.5,col:'rgba(0,255,159,0.45)',lw:1.4},
+      {amp:12,freq:0.028,spd:0.03,y:H*0.7,col:'rgba(0,180,255,0.3)', lw:1.0},
+    ];
+    waves.forEach(function(w){
+      actx.strokeStyle=w.col;actx.lineWidth=w.lw;
+      actx.beginPath();
+      for(var x=0;x<=W;x+=2){
+        var y=w.y+Math.sin(x*w.freq+t*w.spd*60)*w.amp;
+        if(x===0) actx.moveTo(x,y); else actx.lineTo(x,y);
+      }
+      actx.stroke();
+    });
+    // 흘러가는 작은 물방울 점
+    for(var i=0;i<5;i++){
+      var px=((t*40*( i*0.7+0.5))%W+W)%W;
+      var py=H*0.3+Math.sin(px*0.035+t*2.4)*10;
+      var alpha=0.5+0.5*Math.sin(t*3+i);
+      actx.fillStyle='rgba(0,212,255,'+alpha.toFixed(2)+')';
+      actx.beginPath();actx.arc(px,py,2,0,Math.PI*2);actx.fill();
+    }
+    t+=0.016;
+    requestAnimationFrame(drawArt);
+  }
+  drawArt();
+})();
 </script>
 </body>
 </html>

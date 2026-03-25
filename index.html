@@ -2,36 +2,58 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>물아 흘러라</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>물아 흘러라</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>
-  <h1 class="title">물아 흘러라</h1>
-  <div class="subtitle">지형 물흐름 분석기</div>
+<header class="topbar">
+  <div class="title-wrap">
+    <h1 class="title">물아 흘러라</h1>
+    <div class="subtitle">지형 물흐름 분석기</div>
+  </div>
+
+  <div class="toolbar">
+
+    <button id="btnOpen">DXF 열기</button>
+    <button id="btnAnalyze">지형 분석</button>
+    <button id="btnTIN">삼각망</button>
+    <button id="btnFlow">물흐름</button>
+    <button id="btnSection">단면선</button>
+    <button id="btnSave">DXF 저장</button>
+
+    <label class="tool">
+      화살표
+      <select id="arrowStyle">
+        <option value="basic">기본</option>
+        <option value="triangle">삼각형</option>
+        <option value="bold">굵은</option>
+      </select>
+    </label>
+
+  </div>
 </header>
 
-<div id="viewer">
+<main id="viewer">
 
-  <canvas id="mapCanvas"></canvas>
+<canvas id="mapCanvas"></canvas>
 
-  <div id="arrowSelect">
-    화살표 스타일
-    <select id="arrowStyle">
-      <option value="basic">기본</option>
-      <option value="triangle">삼각형</option>
-      <option value="bold">굵은</option>
-    </select>
-  </div>
-
-  <div id="dropzone">
-    DXF 파일을<br>여기로 끌어오세요
-  </div>
-
+<div id="dropzone">
+DXF 파일을<br>여기로 끌어오세요
 </div>
+
+<div id="layerPanel">
+<label><input type="checkbox" id="showContour" checked> 등고선</label>
+<label><input type="checkbox" id="showTIN"> 삼각망</label>
+<label><input type="checkbox" id="showFlow"> 물흐름</label>
+<label><input type="checkbox" id="showSection"> 단면선</label>
+</div>
+
+<input type="file" id="fileInput" accept=".dxf" style="display:none">
+
+</main>
 
 <script src="script.js"></script>
 

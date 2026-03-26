@@ -159,6 +159,18 @@ select:focus{border-color:var(--accent);}
         <div style="margin-top:7px">
           <button class="btn pri" onclick="loadSample()">🗺 샘플 지형 불러오기</button>
         </div>
+        <div style="margin-top:5px">
+          <div class="sec-title" style="margin-bottom:6px">🗂 지형도 필터</div>
+          <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button class="btn" id="btnShowAll" style="flex:1;justify-content:center" onclick="setTerrainFilter(false)">📂 모두 보기</button>
+            <button class="btn pri" id="btnShowTopo" style="flex:1;justify-content:center" onclick="setTerrainFilter(true)">🎯 필요한것만</button>
+          </div>
+          <div id="filterInfo" style="font-size:10px;color:var(--dim);line-height:1.6;padding:5px 6px;background:var(--panel2);border-radius:4px;display:none">
+            ✅ 표시: 등고선 · 표고점 · 높이<br>
+            ❌ 숨김: 건물·도로·식생 등<br>
+            <span style="color:#f59e0b">레이어는 살아있어 PNG/DXF에 포함 가능</span>
+          </div>
+        </div>
       </div>
       <div class="sec">
         <div class="sec-title">레이어 선택</div>
@@ -173,6 +185,8 @@ select:focus{border-color:var(--accent);}
         <div class="togrow"><span class="toglabel">💧 물흐름 화살표</span><div class="tog on" id="togFlow" onclick="toggleVis('Flow')"></div></div>
         <div class="togrow"><span class="toglabel">✏️ 단면선</span><div class="tog on" id="togSection" onclick="toggleVis('Section')"></div></div>
         <div class="togrow"><span class="toglabel">📄 전체 파일 라인</span><div class="tog on" id="togRaw" onclick="toggleVis('Raw')"></div></div>
+        <div class="togrow"><span class="toglabel">📍 표고점/높이 라벨</span><div class="tog on" id="togTextPt" onclick="toggleVis('TextPt')"></div></div>
+        <div class="togrow"><span class="toglabel">🌊 물흐름 시뮬레이션</span><div class="tog" id="togWaterSim" onclick="toggleWaterSim()"></div></div>
         <div class="legbox">
           <div class="leglabel"><span>저지대</span><span>고지대</span></div>
           <div class="legstrip" id="legstrip"></div>
@@ -183,7 +197,7 @@ select:focus{border-color:var(--accent);}
         <div class="sec-title">💧 화살표 설정</div>
         <div class="slrow">
           <label>밀도 <span id="densV">5</span></label>
-          <input type="range" id="dens" min="1" max="20" value="5" oninput="document.getElementById('densV').textContent=this.value;render()">
+          <input type="range" id="dens" min="1" max="100" value="5" oninput="document.getElementById('densV').textContent=this.value;render()">
         </div>
         <div class="slrow">
           <label>크기 <span id="sizeV">14</span>px</label>
@@ -198,6 +212,8 @@ select:focus{border-color:var(--accent);}
           <select id="arrowStyle" onchange="render()">
             <option value="cad">🏗 CAD형 (실선+채움 헤드)</option>
             <option value="classic">▶ 클래식 (채움 삼각형)</option>
+            <option value="fatdown" selected>⬇ 굵은 하향 (사진형)</option>
+            <option value="chevron">⌄ 쉐브론 연속형</option>
             <option value="open">➤ 오픈 V형</option>
             <option value="thin">→ 얇은 선형</option>
             <option value="bold">◀ 굵은 넓은 삼각형</option>
@@ -227,6 +243,77 @@ select:focus{border-color:var(--accent);}
         </div>
       </div>
       <div class="sec">
+        <div class="sec-title">🌊 물흐름 시뮬레이션</div>
+        <div id="waterSimControls" style="display:none">
+          <div class="slrow">
+            <label>물방울 수 <span id="wDropCntV">80</span></label>
+            <input type="range" id="wDropCnt" min="10" max="500" value="80" oninput="document.getElementById('wDropCntV').textContent=this.value;waterReset()">
+          </div>
+          <div class="slrow">
+            <label>속도 <span id="wSpeedV">3</span></label>
+            <input type="range" id="wSpeed" min="1" max="30" value="3" oninput="document.getElementById('wSpeedV').textContent=this.value">
+          </div>
+          <div class="slrow">
+            <label>꼬리 길이 <span id="wTailV">18</span></label>
+            <input type="range" id="wTail" min="4" max="60" value="18" oninput="document.getElementById('wTailV').textContent=this.value">
+          </div>
+          <div class="slrow">
+            <label>투명도 <span id="wAlphaV">75</span>%</label>
+            <input type="range" id="wAlpha" min="20" max="100" value="75" oninput="document.getElementById('wAlphaV').textContent=this.value">
+          </div>
+          <div class="slrow" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <label style="margin-bottom:0;flex:1;font-size:11px;color:var(--dim)">물 색상</label>
+            <input type="color" id="wColor" value="#00aaff" style="width:36px;height:26px;border:1px solid var(--border);border-radius:4px;background:var(--panel2);cursor:pointer;padding:2px;">
+            <select id="wColorPreset" onchange="applyWaterPreset(this.value)" style="flex:1;margin-bottom:0;font-size:10px">
+              <option value="">색상 프리셋</option>
+              <option value="#00aaff">파란물</option>
+              <option value="#00e8ff">청록</option>
+              <option value="#ffffff">흰물</option>
+              <option value="#88ccff">연파랑</option>
+              <option value="#ffd700">황금</option>
+            </select>
+          </div>
+          <div class="slrow">
+            <label style="margin-bottom:4px;font-size:11px;color:var(--dim)">물방울 크기</label>
+            <input type="range" id="wSize" min="1" max="5" value="2" step="0.5" oninput="document.getElementById('wSizeV').textContent=this.value" style="flex:1">
+            <span id="wSizeV" style="font-size:10px;color:var(--accent);font-family:monospace;min-width:16px">2</span>
+          </div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title">🌧 비 효과</div>
+        <div class="togrow">
+          <span class="toglabel">비 내리기</span>
+          <div class="tog" id="togRain" onclick="toggleRain()"></div>
+        </div>
+        <div id="rainControls" style="display:none">
+          <div class="slrow">
+            <label>빗줄기 수 <span id="rainCntV">150</span></label>
+            <input type="range" id="rainCnt" min="30" max="600" value="150" oninput="document.getElementById('rainCntV').textContent=this.value;rainReset()">
+          </div>
+          <div class="slrow">
+            <label>바람 방향 <span id="rainWindV">0</span>°</label>
+            <input type="range" id="rainWind" min="-60" max="60" value="0" oninput="document.getElementById('rainWindV').textContent=this.value">
+          </div>
+          <div class="slrow">
+            <label>속도 <span id="rainSpeedV">5</span></label>
+            <input type="range" id="rainSpeed" min="1" max="20" value="5" oninput="document.getElementById('rainSpeedV').textContent=this.value">
+          </div>
+          <div class="slrow">
+            <label>길이 <span id="rainLenV">18</span>px</label>
+            <input type="range" id="rainLen" min="5" max="60" value="18" oninput="document.getElementById('rainLenV').textContent=this.value">
+          </div>
+          <div class="slrow">
+            <label>투명도 <span id="rainAlphaV">60</span>%</label>
+            <input type="range" id="rainAlpha" min="10" max="100" value="60" oninput="document.getElementById('rainAlphaV').textContent=this.value">
+          </div>
+          <div class="slrow" style="display:flex;align-items:center;gap:8px">
+            <label style="margin-bottom:0;flex:1;font-size:11px;color:var(--dim)">빗줄기 색</label>
+            <input type="color" id="rainColor" value="#aad4ff" style="width:36px;height:26px;border:1px solid var(--border);border-radius:4px;background:var(--panel2);cursor:pointer;padding:2px;">
+          </div>
+        </div>
+      </div>
+      <div class="sec">
         <div class="sec-title">도구</div>
         <button class="btn" id="btnSec" onclick="setTool('section')">📏 단면선 그리기</button>
         <button class="btn" id="btnEr" onclick="setTool('erase')">🗑 삼각형 지우기</button>
@@ -241,6 +328,12 @@ select:focus{border-color:var(--accent);}
         <button class="btn" onclick="exportSectionDXF()">📐 단면도 DXF 저장</button>
       </div>
       <div class="sec">
+        <div class="sec-title">🔍 파싱 진단</div>
+        <div id="parseDiag" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);line-height:1.9;">
+          파일 로드 후 표시됩니다
+        </div>
+      </div>
+      <div class="sec">
         <div class="sec-title">레이어 정보</div>
         <div id="layerList"></div>
       </div>
@@ -249,6 +342,8 @@ select:focus{border-color:var(--accent);}
 
   <div class="ca" id="ca">
     <canvas id="mc"></canvas>
+    <canvas id="rainCanvas" style="position:absolute;top:0;left:0;pointer-events:none;display:none"></canvas>
+    <canvas id="waterCanvas" style="position:absolute;top:0;left:0;pointer-events:none;display:none"></canvas>
     <div class="ca-drop" id="caDrop">
       <div class="ca-drop-inner">
         <div class="drop-ico">💧</div>
@@ -317,8 +412,8 @@ select:focus{border-color:var(--accent);}
 
 // ── STATE
 var S={
-  contours:[], tinPts:[], tris:[], arrows:[], sections:[], layers:{}, rawLines:[], bounds:null, zSamples:[],
-  vis:{DEM:true,Contour:true,TIN:false,Flow:true,Section:true,Raw:true},
+  contours:[], tinPts:[], tris:[], arrows:[], sections:[], layers:{}, rawLines:[], bounds:null, zSamples:[], textPoints:[],
+  vis:{DEM:true,Contour:true,TIN:false,Flow:true,Section:true,Raw:true,TextPt:true,WaterSim:false},
   tool:'pan', ox:0, oy:0, scale:1,
   pan:false, panSX:0, panSY:0, secStart:null, mpos:{x:0,y:0}
 };
@@ -331,6 +426,11 @@ var sctx=sc.getContext('2d');
 function resize(){
   var a=document.getElementById('ca');
   mc.width=a.clientWidth; mc.height=a.clientHeight;
+  // waterCanvas, rainCanvas도 동기화
+  var wc=document.getElementById('waterCanvas');
+  if(wc){wc.width=mc.width;wc.height=mc.height;}
+  var rc=document.getElementById('rainCanvas');
+  if(rc){rc.width=mc.width;rc.height=mc.height;}
   // 단면도 캔버스 크기도 부모 패널에 맞게 동적 조정
   var rp=sc.parentElement;
   sc.width=rp.clientWidth;
@@ -470,8 +570,24 @@ function parseDXFText(text){
 
   // 좌표 유효성: TM좌표(수만~수십만)인지 심볼(-2~2)인지 판별
   function validCoord(x,y){
-    return x!==null&&y!==null&&(Math.abs(x)>10||Math.abs(y)>10);
+    return x!==null&&y!==null&&(Math.abs(x)>100||Math.abs(y)>100);
   }
+
+  // ★ 수치지형도 2.0 레이어코드 → 등고선 종류 및 간격
+  var CONTOUR_LAYERS={
+    'B0014111':'주곡선', 'B0014112':'계곡선',
+    'B0014113':'간곡선', 'B0014114':'조곡선',
+    'B0014116':'계곡선2','B0014117':'간곡선2',
+    'B0014118':'간곡선3','B0014119':'조곡선2',
+    'B0014311':'수애선',
+  };
+  // 레이어별 등고선 간격 (m)
+  var LAYER_INTERVAL={
+    'B0014112':50,'B0014116':50,  // 계곡선 50m
+    'B0014111':10,'B0014113':10,'B0014117':10,  // 주곡선 10m
+    'B0014118':5,'B0014114':5,'B0014119':5,     // 간곡선 5m
+  };
+
   function addEntity(layer,elev,pts,hasElev){
     if(!pts || pts.length<2) return;
     if(!validCoord(pts[0].x,pts[0].y)) return;
@@ -479,12 +595,11 @@ function parseDXFText(text){
     var item={elev:elev,pts:pts,hasElev:!!hasElev};
     layers[layer].push(item);
     rawLines.push({layer:layer,elev:elev,pts:pts,hasElev:!!hasElev});
-    if(hasElev) contours.push({elev:elev,pts:pts,layer:layer});
+    if(hasElev && elev!==0) contours.push({elev:elev,pts:pts,layer:layer});
   }
   function tryLayerElevation(layer){
     if(!layer) return null;
     var m=null;
-    // EL_045 / ELEV100 / H=35 / Z-120 / 숫자만 레이어 등 인식
     m=layer.match(/(?:EL(?:EV)?|RL|H|Z)\s*[_=\- ]?\s*(\d{1,4}(?:\.\d+)?)/i);
     if(!m) m=layer.match(/^(\d{1,4}(?:\.\d+)?)$/);
     if(!m) m=layer.match(/(?:^|[_\- ])(\d{1,4}(?:\.\d+)?)(?:m)?(?:$|[_\- ])/i);
@@ -566,14 +681,123 @@ function parseDXFText(text){
     }
   }
 
-  // 레이어명에서 고도 추출 보정
+  // ══════════════════════════════════════════════════════
+  // TEXT/MTEXT 파싱 → 표고점 수집
+  // ══════════════════════════════════════════════════════
+  var textPoints=[];
+  var i2=0;
+  while(i2<lines.length-1){
+    var tc=lines[i2].trim(); i2++;
+    var tv=(i2<lines.length)?lines[i2].trim():''; i2++;
+    if(tc==='0'&&(tv==='TEXT'||tv==='MTEXT')){
+      var tx=null,ty=null,tstr='',tlay='';
+      while(i2<lines.length-1){
+        var tc2=lines[i2].trim();
+        if(tc2==='0') break;
+        var tv2=(i2+1<lines.length)?lines[i2+1].trim():''; i2+=2;
+        if(tc2==='10') tx=sf(tv2);
+        else if(tc2==='20') ty=sf(tv2);
+        else if(tc2==='1') tstr=tv2;
+        else if(tc2==='8') tlay=tv2;
+      }
+      if(tx!==null&&ty!==null&&tstr&&validCoord(tx,ty)){
+        // ★ 등고선 표고 레이어만 사용 (건물높이 레이어 제외)
+        // F0017131: 등고선 표고 라벨 (수치지형도 2.0)
+        // F001xxxx: 표고점 기준점
+        // F002xxxx, F003xxxx 등: 건물/시설물 → 제외
+        var isElevLayer = (
+          tlay==='' ||                          // 레이어 없음
+          tlay.match(/^F001/i) ||              // 표고점 레이어
+          tlay.match(/^F0017/i) ||             // 등고선 수치 라벨
+          tlay.match(/^(ELEV|CONT|TIN|등고|표고)/i) // 일반 DXF
+        );
+        // F0027xxx(건물높이) 등 명시적 제외
+        var isExcluded = tlay.match(/^F002|^F003|^F004|^F005|^A|^B002|^C|^D|^E|^G|^H/i);
+        if(isElevLayer && !isExcluded){
+          var cleanStr=tstr.replace(/\{[^}]*\}/g,'').replace(/\\/g,'').trim();
+          var numMatch=cleanStr.match(/^\s*([0-9]+(?:\.[0-9]+)?)\s*$/);
+          if(!numMatch) numMatch=cleanStr.match(/([0-9]+(?:\.[0-9]+)?)/);
+          if(numMatch){
+            var numVal=parseFloat(numMatch[1]);
+            // 등고선 표고는 보통 1m 이상 정수에 가까운 값
+            if(isFinite(numVal)&&numVal>=1&&numVal<9999){
+              textPoints.push({x:tx,y:ty,val:numVal,layer:tlay});
+            }
+          }
+        }
+      }
+    }
+  }
+  S.textPoints=(S.textPoints||[]).concat(textPoints);
+
+  // ══════════════════════════════════════════════════════
+  // ★ 핵심: 수치지형도 2.0 등고선 고도 배정
+  // 국토지리정보원 수치지형도는 GROUP38=0 (고도없음)
+  // → TEXT 표고점 + IDW 보간 + 레이어별 간격으로 정밀 배정
+  // ══════════════════════════════════════════════════════
+  if(textPoints.length>0){
+    var lkeys2=Object.keys(layers);
+    for(var li2=0;li2<lkeys2.length;li2++){
+      var lname2=lkeys2[li2];
+      var interval=LAYER_INTERVAL[lname2];
+      if(!interval) continue; // 등고선 레이어 아님
+      var items2=layers[lname2];
+      for(var ii2=0;ii2<items2.length;ii2++){
+        var item2=items2[ii2];
+        if(item2.hasElev&&item2.elev!==0) continue;
+        // IDW: 각 TEXT까지 거리의 역수로 가중 평균
+        var wSum=0, vSum=0;
+        var sampleStep=Math.max(1,Math.floor(item2.pts.length/8));
+        for(var ti3=0;ti3<textPoints.length;ti3++){
+          var tp3=textPoints[ti3];
+          // 등고선 샘플 점들과 TEXT 사이의 최소 거리
+          var minD2=Infinity;
+          for(var pi3=0;pi3<item2.pts.length;pi3+=sampleStep){
+            var ddx3=item2.pts[pi3].x-tp3.x;
+            var ddy3=item2.pts[pi3].y-tp3.y;
+            var d2=ddx3*ddx3+ddy3*ddy3;
+            if(d2<minD2) minD2=d2;
+          }
+          if(minD2<1) { wSum=1; vSum=tp3.val; break; } // 바로 위
+          // F0017131(등고선 표고라벨)에 가중치 2배
+          var wBoost=(tp3.layer==='F0017131'||tp3.layer==='F0011111')?4:1;
+          var w=(1/minD2)*wBoost;
+          wSum+=w; vSum+=w*tp3.val;
+        }
+        if(wSum>0){
+          var idwVal=vSum/wSum;
+          // 레이어 간격으로 반올림
+          var snapped=Math.round(idwVal/interval)*interval;
+          if(snapped<=0) snapped=interval;
+          item2.elev=snapped;
+          item2.hasElev=true;
+          // rawLines 동기화
+          for(var ri3=0;ri3<rawLines.length;ri3++){
+            if(rawLines[ri3].pts===item2.pts){
+              rawLines[ri3].elev=snapped;
+              rawLines[ri3].hasElev=true;
+              break;
+            }
+          }
+          // contours에 추가
+          var already2=false;
+          for(var ci3=0;ci3<contours.length;ci3++){
+            if(contours[ci3].pts===item2.pts){already2=true;break;}
+          }
+          if(!already2) contours.push({elev:snapped,pts:item2.pts,layer:lname2});
+        }
+      }
+    }
+  }
+
+  // 레이어명에서 고도 추출 보정 (일반 DXF용)
   var lkeys=Object.keys(layers);
   for(var li=0;li<lkeys.length;li++){
     var lname=lkeys[li], items=layers[lname];
     var inferred=tryLayerElevation(lname);
     if(inferred===null) continue;
     for(var ii=0;ii<items.length;ii++){
-      if(items[ii].hasElev) continue;
+      if(items[ii].hasElev&&items[ii].elev!==0) continue;
       items[ii].elev=inferred;
       items[ii].hasElev=true;
       for(var ri=0;ri<rawLines.length;ri++){
@@ -590,7 +814,94 @@ function parseDXFText(text){
     }
   }
 
-  return {contours:contours,layers:layers,rawLines:rawLines};
+
+    return {contours:contours,layers:layers,rawLines:rawLines,srcLines:lines};
+}
+
+
+// ══════════════════════════════════════════════════════
+// INSERT 기반 표고점 파싱
+// × 심볼(INSERT) + 근처 TEXT = 정확한 표고점
+// 수치지형도 F0027217 블록 + F0027132 TEXT
+// ══════════════════════════════════════════════════════
+function parseSurveyPoints(lines, outPts, outZSamples){
+  // 1) 모든 INSERT 수집 (실제 TM 좌표만)
+  var insertPts=[];
+  var i=0;
+  while(i<lines.length-1){
+    var ic=lines[i].trim(); i++;
+    var iv=(i<lines.length)?lines[i].trim():''; i++;
+    if(ic==='0'&&iv==='INSERT'){
+      var ib=null,ix=null,iy=null;
+      var j=i;
+      while(j<lines.length-1){
+        var c=lines[j].trim(); j++;
+        var v=(j<lines.length)?lines[j].trim():''; j++;
+        if(c==='0') break;
+        if(c==='2') ib=v;
+        if(c==='10'){var f=parseFloat(v);if(!isNaN(f))ix=f;}
+        if(c==='20'){var f=parseFloat(v);if(!isNaN(f))iy=f;}
+      }
+      // 실제 TM 좌표 (심볼 블록 내부 좌표 제외)
+      if(ix!==null&&iy!==null&&(Math.abs(ix)>100||Math.abs(iy)>100)){
+        insertPts.push({x:ix,y:iy,block:ib});
+      }
+    }
+  }
+  if(!insertPts.length) return 0;
+
+  // 2) 모든 TEXT/MTEXT 수집
+  var allTxt=[];
+  var i2=0;
+  while(i2<lines.length-1){
+    var tc=lines[i2].trim(); i2++;
+    var tv=(i2<lines.length)?lines[i2].trim():''; i2++;
+    if(tc==='0'&&(tv==='TEXT'||tv==='MTEXT')){
+      var tx=null,ty=null,ts='',tl='';
+      var j2=i2;
+      while(j2<lines.length-1){
+        var c2=lines[j2].trim(); j2++;
+        var v2=(j2<lines.length)?lines[j2].trim():''; j2++;
+        if(c2==='0') break;
+        if(c2==='10'){var f=parseFloat(v2);if(!isNaN(f))tx=f;}
+        if(c2==='20'){var f=parseFloat(v2);if(!isNaN(f))ty=f;}
+        if(c2==='1') ts=v2;
+        if(c2==='8') tl=v2;
+      }
+      if(tx!==null&&ty!==null&&ts&&(Math.abs(tx)>100||Math.abs(ty)>100)){
+        // MTEXT 서식코드 제거
+        var cs=ts.replace(/\{[^\}]*\}/g,'').replace(/\\/g,'').trim();
+        allTxt.push({x:tx,y:ty,val:cs,layer:tl});
+      }
+    }
+  }
+
+  // 3) 각 INSERT에서 가장 가까운 숫자 TEXT 찾기 (100m 이내)
+  var added=0;
+  for(var pi=0;pi<insertPts.length;pi++){
+    var ins=insertPts[pi];
+    var bestVal=null,bestD=Infinity;
+    for(var ti=0;ti<allTxt.length;ti++){
+      var t=allTxt[ti];
+      var dx=ins.x-t.x,dy=ins.y-t.y;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if(d>100) continue;
+      // 숫자값 추출
+      var nm=t.val.match(/^([0-9]+(?:\.[0-9]+)?)\s*$/);
+      if(!nm) nm=t.val.match(/([0-9]+(?:\.[0-9]+)?)/);
+      if(!nm) continue;
+      var nv=parseFloat(nm[1]);
+      if(!isFinite(nv)||nv<1||nv>3000) continue;
+      if(d<bestD){bestD=d;bestVal=nv;}
+    }
+    if(bestVal!==null){
+      // INSERT 위치에 표고점 등록
+      outPts.push({x:ins.x,y:ins.y,val:bestVal,layer:'_SURVEY_PT'});
+      outZSamples.push({x:ins.x,y:ins.y,z:bestVal});
+      added++;
+    }
+  }
+  return added;
 }
 
 
@@ -604,7 +915,7 @@ function readFiles(files){
   if(!files.length) return;
   var pb=document.getElementById('pb'), pf=document.getElementById('pf');
   pb.style.display='block'; pf.style.width='10%';
-  var allC=[], allL={}, allR=[], done=0, total=files.length;
+  var allC=[], allL={}, allR=[], allSP=[], allSZ=[], done=0, total=files.length;
   Array.from(files).forEach(function(f){
     var r=new FileReader();
     r.onload=function(ev){
@@ -613,18 +924,45 @@ function readFiles(files){
         var res=parseDXFBytes(ev.target.result);
         allC=allC.concat(res.contours);
         allR=allR.concat(res.rawLines||[]);
+        // IDW용 textPoints(등고선 라벨) 수집
+        if(S.textPoints&&S.textPoints.length){
+          allSP=allSP.concat(S.textPoints.filter(function(tp){return tp.layer!=='_SURVEY_PT';}));
+          S.textPoints=[];
+        }
+        // × 심볼 표고점 파싱 → 별도 배열에 모음 (done===total 후 등록)
+        if(res.srcLines){
+          var _sp=[],_sz=[];
+          parseSurveyPoints(res.srcLines,_sp,_sz);
+          allSP=allSP.concat(_sp);
+          allSZ=allSZ.concat(_sz);
+        }
         Object.keys(res.layers).forEach(function(k){allL[k]=(allL[k]||[]).concat(res.layers[k]);});
       }catch(e){console.warn(e);}
       done++;
       pf.style.width=(10+70*(done/total))+'%';
       if(done===total){
         S.contours=allC; S.layers=allL; S.rawLines=allR;
+        // 표고점 등록 (파싱된 × 심볼 표고점들)
+        S.textPoints=allSP.slice();
+        // zSamples에도 추가
+        S.zSamples=(S.zSamples||[]).concat(allSZ);
         // 진단 정보
         var withElev=allR.filter(function(c){return c.hasElev;}).length;
         var elevSet=allC.map(function(c){return c.elev;}).filter(function(e,i,a){return a.indexOf(e)===i;}).sort(function(a,b){return a-b;});
         console.log('파싱 결과 - 등고선:'+allC.length+'개, 고도인식:'+withElev+'개, rawLines:'+allR.length+'개');
+        console.log('고도값(상위10):', elevSet.slice(-10));
         console.log('고도값:', elevSet);
-        notify('파싱: 등고선 '+allC.length+'개 / 고도 인식 '+withElev+'개 / 전체선 '+allR.length+'개');
+        var minEv=elevSet.length?elevSet[0]:0, maxEv=elevSet.length?elevSet[elevSet.length-1]:0;
+        notify('파싱: 등고선 '+allC.length+'개 / 고도 인식 '+withElev+'개 / 고도범위 '+minEv+'~'+maxEv+'m');
+        var diagEl=document.getElementById('parseDiag');
+        if(diagEl){
+          var zPreview=elevSet.slice(0,12).join(', ')+(elevSet.length>12?'...':'');
+          diagEl.innerHTML='<span style="color:var(--accent2)">등고선</span> '+allC.length+'개<br>'
+            +'<span style="color:var(--accent2)">고도인식</span> '+withElev+'개<br>'
+            +'<span style="color:var(--accent2)">고도범위</span> '+minEv+'~'+maxEv+'m<br>'
+            +'<span style="color:var(--accent2)">전체라인</span> '+allR.length+'개<br>'
+            +'<span style="color:var(--dim)">고도값: '+zPreview+'</span>';
+        }
         populateLayers();
         setTimeout(function(){runAnalysis();pf.style.width='100%';setTimeout(function(){pb.style.display='none';},600);},100);
       }
@@ -655,8 +993,8 @@ function runAnalysis(){
   var zSamples=[];
   for(var ci=0;ci<S.contours.length;ci++){
     var c=S.contours[ci], n=c.pts.length;
-    var tinStep=Math.max(1,Math.floor(n/30));
-    var sampleStep=Math.max(1,Math.floor(n/80));
+    var tinStep=Math.max(1,Math.floor(n/50));   // 등고선당 더 많은 점 (30→50)
+    var sampleStep=Math.max(1,Math.floor(n/100));
     for(var i=0;i<n;i+=tinStep) pts.push({x:c.pts[i].x,y:c.pts[i].y,z:c.elev});
     for(var j=0;j<n;j+=sampleStep) zSamples.push({x:c.pts[j].x,y:c.pts[j].y,z:c.elev});
   }
@@ -673,16 +1011,36 @@ function runAnalysis(){
     if(!sampleSeen[ks]){sampleSeen[ks]=1;sampleClean.push(zSamples[si]);}
   }
   S.zSamples=sampleClean;
+  // 표고점 zSamples + TIN pts에 추가 (단면도/IDW/TIN 보간에 반영)
+  if(S.textPoints&&S.textPoints.length){
+    for(var tpi=0;tpi<S.textPoints.length;tpi++){
+      var tp=S.textPoints[tpi];
+      S.zSamples.push({x:tp.x,y:tp.y,z:tp.val});
+      // _SURVEY_PT(× 표고점)는 TIN에도 직접 추가 → 단면 보간 정확도
+      if(tp.layer==='_SURVEY_PT'){
+        pts.push({x:tp.x,y:tp.y,z:tp.val});
+      }
+    }
+  }
   // Limit
-  if(pts.length>1200){
-    var step=Math.ceil(pts.length/1200), filtered=[];
+  if(pts.length>3000){
+    var step=Math.ceil(pts.length/3000), filtered=[];
     for(var i=0;i<pts.length;i+=step) filtered.push(pts[i]);
     pts=filtered;
   }
 
   var xs=pts.length?pts.map(function(p){return p.x;}):allXs;
   var ys=pts.length?pts.map(function(p){return p.y;}):allYs;
-  var zs=pts.map(function(p){return p.z;});
+  // elev=0 및 이상값 제외 (건물높이 등 오염 방지)
+  var zs=pts.filter(function(p){return p.z>0;}).map(function(p){return p.z;});
+  if(zs.length>4){
+    // 상하위 2% 이상값 제거 (robust bounds)
+    var zsSorted=zs.slice().sort(function(a,b){return a-b;});
+    var lo2=zsSorted[Math.floor(zsSorted.length*0.02)];
+    var hi2=zsSorted[Math.floor(zsSorted.length*0.98)];
+    zs=zs.filter(function(z){return z>=lo2&&z<=hi2;});
+  }
+  if(!zs.length) zs=pts.map(function(p){return p.z;});
 
   // bounds: x/y는 전체 rawLines 범위, z는 등고선 범위
   var bMinX=allXs.length?Math.min.apply(null,allXs):Math.min.apply(null,xs);
@@ -875,28 +1233,60 @@ function calcArrows(){
 function fitView(){
   if(!S.bounds) return;
   var minX=S.bounds.minX, maxX=S.bounds.maxX, minY=S.bounds.minY, maxY=S.bounds.maxY;
-  var pad=50, W=mc.width, H=mc.height;
-  var sx=(W-pad*2)/(maxX-minX||1), sy=(H-pad*2)/(maxY-minY||1);
+  var pad=14, W=mc.width, H=mc.height;
+  var dX=maxX-minX||1, dY=maxY-minY||1;
+  // 가로/세로 비율에 맞춰 scale 결정
+  var sx=(W-pad*2)/dX, sy=(H-pad*2)/dY;
   S.scale=Math.min(sx,sy);
-  S.baseScale=S.scale; // fitView 기준 스케일 저장
-  S.ox=(W-(maxX-minX)*S.scale)/2-minX*S.scale;
-  S.oy=(H-(maxY-minY)*S.scale)/2-minY*S.scale;
+  S.baseScale=S.scale;
+  // X: 좌우 중앙
+  S.ox=(W-dX*S.scale)/2 - minX*S.scale;
+  // Y: w2s = H-(y*scale+oy)
+  //   minY(남쪽) → screen_y = H-pad (화면 아래쪽)
+  //   → H-(minY*scale+oy) = H-pad → oy = pad - minY*scale
+  S.oy=pad - minY*S.scale;
+  // 지형이 화면 가로세로 중 짧은 쪽에 맞으므로 긴 쪽은 중앙정렬
+  if(sx<sy){
+    // X가 기준: Y를 중앙에
+    S.oy=(H-dY*S.scale)/2 - minY*S.scale + dY*S.scale;
+    // 재계산: screen_minY = H-(maxY*scale+oy)=pad, screen_maxY=H-(minY*scale+oy)=H-pad
+    S.oy = pad - minY*S.scale;
+    // 상하 중앙: 남은 공간을 위아래로 배분
+    var usedH = dY*S.scale;
+    var topPad = (H-usedH)/2;
+    S.oy = topPad - minY*S.scale;
+  } else {
+    // Y가 기준: X를 중앙에
+    S.ox=(W-dX*S.scale)/2 - minX*S.scale;
+    S.oy=pad - minY*S.scale;
+  }
   document.getElementById('czoom').textContent='100';
 }
-function w2s(x,y){return{x:x*S.scale+S.ox,y:y*S.scale+S.oy};}
-function s2w(sx,sy){return{x:(sx-S.ox)/S.scale,y:(sy-S.oy)/S.scale};}
+function w2s(x,y){return{x:x*S.scale+S.ox,y:mc.height-(y*S.scale+S.oy)};}
+function s2w(sx,sy){return{x:(sx-S.ox)/S.scale,y:(mc.height-sy-S.oy)/S.scale};}
 
 // ── COLOR
 function zCol(z){
   if(!S.bounds) return 'rgba(128,128,128,.5)';
   var minZ=S.bounds.minZ, maxZ=S.bounds.maxZ;
+  if(maxZ===minZ) return 'rgba(0,200,100,0.78)';
   var t=Math.max(0,Math.min(1,(z-minZ)/((maxZ-minZ)||1)));
-  var stops=[[0,0,255],[0,128,255],[0,255,200],[0,255,80],[100,255,0],[255,255,0],[255,160,0],[255,40,0]];
+  // 파랑(저지대) → 초록 → 노랑 → 주황 → 빨강(고지대)
+  var stops=[
+    [20,60,180],   // 0%  짙은 파랑
+    [0,140,255],   // 14% 파랑
+    [0,220,180],   // 28% 청록
+    [0,240,80],    // 42% 초록
+    [140,255,0],   // 57% 연초록
+    [255,240,0],   // 71% 노랑
+    [255,140,0],   // 85% 주황
+    [220,30,0]     // 100% 빨강
+  ];
   var idx=t*(stops.length-1), lo=Math.floor(idx), hi=Math.min(stops.length-1,lo+1), f=idx-lo;
   var r=stops[lo][0]*(1-f)+stops[hi][0]*f;
   var g=stops[lo][1]*(1-f)+stops[hi][1]*f;
   var b=stops[lo][2]*(1-f)+stops[hi][2]*f;
-  return 'rgba('+(r|0)+','+(g|0)+','+(b|0)+',0.78)';
+  return 'rgba('+(r|0)+','+(g|0)+','+(b|0)+',0.82)';
 }
 
 // ── RENDER
@@ -920,6 +1310,7 @@ function render(){
     for(var ri=0;ri<S.rawLines.length;ri++){
       var rl=S.rawLines[ri];
       if(rl.pts.length<2) continue;
+      if(!shouldDrawRawLine(rl)) continue;
       var isContour=(rl.elev!==0);
       if(isContour){
         // 등고선: 고도에 따른 색상
@@ -940,14 +1331,31 @@ function render(){
     ctx.globalAlpha=1.0;
   }
 
-  // DEM
+  // DEM - 각 꼭짓점 고도로 그라디언트 채우기
   if(S.vis.DEM){
     for(var ti=0;ti<tris.length;ti++){
       var t=tris[ti]; if(t.del) continue;
       var A=w2s(pts[t.a].x,pts[t.a].y), B=w2s(pts[t.b].x,pts[t.b].y), C=w2s(pts[t.c].x,pts[t.c].y);
-      var avgZ=(pts[t.a].z+pts[t.b].z+pts[t.c].z)/3;
-      ctx.fillStyle=zCol(avgZ);
-      ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.closePath();ctx.fill();
+      var zA=pts[t.a].z, zB=pts[t.b].z, zC=pts[t.c].z;
+      var avgZ=(zA+zB+zC)/3;
+      // 꼭짓점 z 차이가 크면 그라디언트, 아니면 단색
+      var zRange=Math.max(zA,zB,zC)-Math.min(zA,zB,zC);
+      if(zRange<1 || S.bounds.maxZ===S.bounds.minZ){
+        ctx.fillStyle=zCol(avgZ);
+        ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.closePath();ctx.fill();
+      } else {
+        // 고도 높은 꼭짓점 → 낮은 꼭짓점 방향 그라디언트
+        var maxV=zA>=zB&&zA>=zC?A:(zB>=zC?B:C);
+        var minV=zA<=zB&&zA<=zC?A:(zB<=zC?B:C);
+        try{
+          var grad=ctx.createLinearGradient(maxV.x,maxV.y,minV.x,minV.y);
+          var maxZ2=Math.max(zA,zB,zC), minZ2=Math.min(zA,zB,zC);
+          grad.addColorStop(0,zCol(maxZ2));
+          grad.addColorStop(1,zCol(minZ2));
+          ctx.fillStyle=grad;
+        }catch(e){ ctx.fillStyle=zCol(avgZ); }
+        ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.closePath();ctx.fill();
+      }
     }
   }
   // TIN
@@ -1001,7 +1409,7 @@ function render(){
   if(S.vis.Flow&&S.arrows.length){
     var dens=parseInt(document.getElementById('dens').value);
     var alen=parseInt(document.getElementById('asize').value);
-    var skip=Math.max(1,21-dens*2);
+    var skip=Math.max(1,Math.round(S.arrows.length/(dens*dens*0.5+1)));
     var col=getArrowColor();
     var lw=parseFloat((document.getElementById('alw')||{value:1.3}).value)||1.3;
     ctx.fillStyle=col; ctx.strokeStyle=col; ctx.lineWidth=lw;
@@ -1009,7 +1417,54 @@ function render(){
       if(ai%skip!==0) continue;
       var a=S.arrows[ai], s=w2s(a.x,a.y);
       if(s.x<-30||s.x>mc.width+30||s.y<-30||s.y>mc.height+30) continue;
-      drawArrow(s.x,s.y,a.dx,a.dy,alen);
+      drawArrow(s.x,s.y,a.dx,-a.dy,alen);
+    }
+  }
+  // TextPoints (표고점/표고 높이 라벨) - 등고선 표고 레이어만 표시
+  if(S.vis.TextPt && S.textPoints && S.textPoints.length){
+    ctx.font='10px JetBrains Mono';
+    for(var tpi=0;tpi<S.textPoints.length;tpi++){
+      var tp=S.textPoints[tpi];
+      // _SURVEY_PT(× 심볼 표고점)만 표시
+      var showPt=(tp.layer==='_SURVEY_PT');
+      if(!showPt) continue;
+      var tps=w2s(tp.x,tp.y);
+      if(tps.x<-10||tps.x>mc.width+10||tps.y<-10||tps.y>mc.height+10) continue;
+      // ── 캐드와 동일한 × 심볼 렌더링
+      var tlbl=tp.val.toFixed(1)+'m';
+      var sz=5; // × 심볼 크기
+      // 마우스 근접 시 강조
+      var mDx=tps.x-S.mpos_s_x||0, mDy=tps.y-S.mpos_s_y||0;
+      var mNear=S.mpos_s_x&&Math.sqrt((tps.x-S.mpos_s_x)*(tps.x-S.mpos_s_x)+(tps.y-S.mpos_s_y)*(tps.y-S.mpos_s_y))<14;
+      var xCol=mNear?'rgba(255,100,100,1)':'rgba(255,220,50,0.95)';
+      var lw=mNear?2.2:1.6;
+      ctx.strokeStyle=xCol;
+      ctx.lineWidth=lw;
+      ctx.lineCap='round';
+      // × 두 대각선
+      ctx.beginPath();
+      ctx.moveTo(tps.x-sz,tps.y-sz);
+      ctx.lineTo(tps.x+sz,tps.y+sz);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(tps.x+sz,tps.y-sz);
+      ctx.lineTo(tps.x-sz,tps.y+sz);
+      ctx.stroke();
+      // 클릭 가능 힌트 원
+      if(mNear){
+        ctx.strokeStyle='rgba(255,100,100,0.4)';
+        ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(tps.x,tps.y,10,0,Math.PI*2);ctx.stroke();
+      }
+      // ── 오른쪽 옆에 숫자 라벨
+      ctx.font='bold 10px JetBrains Mono';
+      var tw2=ctx.measureText(tlbl).width;
+      var lblX=tps.x+sz+4;
+      var lblY=tps.y+4;
+      ctx.fillStyle='rgba(5,8,16,0.88)';
+      ctx.fillRect(lblX-1,lblY-10,tw2+3,12);
+      ctx.fillStyle=mNear?'#ff8888':'#ffee55';
+      ctx.fillText(tlbl,lblX,lblY);
     }
   }
   // Sections
@@ -1148,6 +1603,41 @@ function drawArrow(x,y,dx,dy,len){
     ctx.lineTo(ex-hl*Math.cos(ang-0.38),ey-hl*Math.sin(ang-0.38));
     ctx.lineTo(ex-hl*Math.cos(ang+0.38),ey-hl*Math.sin(ang+0.38));
     ctx.closePath();ctx.fill();
+
+  } else if(style==='fatdown'){
+    // 굵은 하향 화살표 (사진형): 몸통 rect + 큰 삼각 헤드
+    var bw=len*0.28;           // 몸통 반폭
+    var bodyLen=len*0.52;      // 몸통 길이
+    var bx=x, by=y;
+    var ex2=x+dx*bodyLen, ey2=y+dy*bodyLen;
+    // 몸통 (두꺼운 직사각형)
+    ctx.beginPath();
+    ctx.moveTo(bx-dy*bw, by+dx*bw);
+    ctx.lineTo(ex2-dy*bw, ey2+dx*bw);
+    ctx.lineTo(ex2+dy*bw, ey2-dx*bw);
+    ctx.lineTo(bx+dy*bw, by-dx*bw);
+    ctx.closePath();ctx.fill();
+    // 날개 확장 후 삼각 헤드
+    var hw2=len*0.52;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex2-dy*hw2, ey2+dx*hw2);
+    ctx.lineTo(ex2+dy*hw2, ey2-dx*hw2);
+    ctx.closePath();ctx.fill();
+
+  } else if(style==='chevron'){
+    // 쉐브론 연속형: V자 2개
+    var step=len*0.42;
+    var hw=len*0.38;
+    for(var ci=0;ci<2;ci++){
+      var ox2=x+dx*step*ci, oy2=y+dy*step*ci;
+      var mx=ox2+dx*step*0.5, my=oy2+dy*step*0.5;
+      ctx.beginPath();
+      ctx.moveTo(ox2-dy*hw, oy2+dx*hw);
+      ctx.lineTo(mx, my);
+      ctx.lineTo(ox2+dy*hw, oy2-dx*hw);
+      ctx.stroke();
+    }
   }
 }
 
@@ -1155,18 +1645,49 @@ function drawArrow(x,y,dx,dy,len){
 function cpos(e){var r=mc.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 mc.addEventListener('mousedown',function(e){
   var p=cpos(e);
-  if(S.tool==='pan'){S.pan=true;S.panSX=p.x-S.ox;S.panSY=p.y-S.oy;}
+  if(S.tool==='pan'){S.pan=true;S.panSX=p.x-S.ox;S.panSY=(mc.height-p.y)-S.oy;}
   else if(S.tool==='section'){S.secStart=s2w(p.x,p.y);}
+  // × 표고점 클릭 편집 (이동 모드에서 클릭 시)
+  if(S.tool==='pan'&&!S.pan){
+    var clickW=s2w(p.x,p.y);
+    var hitR=12/S.scale; // 화면 12px → 세계좌표 반경
+    var nearest=null,nearD=Infinity;
+    for(var hpi=0;hpi<S.textPoints.length;hpi++){
+      var htp=S.textPoints[hpi];
+      if(htp.layer!=='_SURVEY_PT') continue;
+      var hdx=htp.x-clickW.x,hdy=htp.y-clickW.y;
+      var hd=Math.sqrt(hdx*hdx+hdy*hdy);
+      if(hd<hitR&&hd<nearD){nearD=hd;nearest=hpi;}
+    }
+    if(nearest!==null){
+      var htp=S.textPoints[nearest];
+      var newVal=prompt('표고점 높이 입력 (현재: '+htp.val.toFixed(1)+'m)', htp.val.toFixed(1));
+      if(newVal!==null){
+        var nv=parseFloat(newVal);
+        if(isFinite(nv)&&nv>0&&nv<9999){
+          S.textPoints[nearest].val=nv;
+          // zSamples도 업데이트
+          for(var zpi=0;zpi<S.zSamples.length;zpi++){
+            var zp=S.zSamples[zpi];
+            var zdx=zp.x-htp.x,zdy=zp.y-htp.y;
+            if(zdx*zdx+zdy*zdy<1){S.zSamples[zpi].z=nv;break;}
+          }
+          notify('표고점 '+nv.toFixed(1)+'m 로 수정됨. 지형 분석을 다시 실행하세요.');
+          render();
+        }
+      }
+    }
+  }
   else if(S.tool==='erase'){eraseTri(p);}
 });
 mc.addEventListener('mousemove',function(e){
-  var p=cpos(e); S.mpos=p;
+  var p=cpos(e); S.mpos=p; S.mpos_s_x=p.x; S.mpos_s_y=p.y;
   var w=s2w(p.x,p.y);
   document.getElementById('cx').textContent=w.x.toFixed(1);
   document.getElementById('cy').textContent=w.y.toFixed(1);
   var z=getZ(w.x,w.y);
   document.getElementById('cz').textContent=z!==null?z.toFixed(1):'-';
-  if(S.pan){S.ox=p.x-S.panSX;S.oy=p.y-S.panSY;render();}
+  if(S.pan){S.ox=p.x-S.panSX;S.oy=(mc.height-p.y)-S.panSY;render();}
   else if(S.tool==='section'&&S.secStart) render();
 });
 mc.addEventListener('mouseup',function(e){
@@ -1188,7 +1709,13 @@ mc.addEventListener('mouseup',function(e){
 mc.addEventListener('wheel',function(e){
   e.preventDefault();
   var p=cpos(e), f=e.deltaY<0?1.12:0.88;
-  S.scale*=f; S.ox=p.x-(p.x-S.ox)*f; S.oy=p.y-(p.y-S.oy)*f;
+  var H=mc.height;
+  S.scale*=f;
+  // X: 마우스 x 기준 zoom
+  S.ox=p.x-(p.x-S.ox)*f;
+  // Y: Y반전 좌표계 - 마우스 y 기준 zoom
+  // oy' = (H-p.y) - (H-p.y - oy)*f
+  S.oy=(H-p.y)-(H-p.y-S.oy)*f;
   var rel=S.baseScale?Math.round(S.scale/S.baseScale*100):Math.round(S.scale*100);
   document.getElementById('czoom').textContent=rel;
   render();
@@ -1198,7 +1725,7 @@ mc.addEventListener('touchstart',function(e){e.preventDefault();lastT=cpos(e.tou
 mc.addEventListener('touchmove',function(e){
   e.preventDefault();
   if(!S.pan||!lastT) return;
-  var p=cpos(e.touches[0]);S.ox+=p.x-lastT.x;S.oy+=p.y-lastT.y;lastT=p;render();
+  var p=cpos(e.touches[0]);S.ox+=p.x-lastT.x;S.oy-=p.y-lastT.y;lastT=p;render();
 },{passive:false});
 mc.addEventListener('touchend',function(e){e.preventDefault();S.pan=false;lastT=null;},{passive:false});
 
@@ -1277,6 +1804,10 @@ function inTri(px,py,A,B,C){
 }
 function idwZ(wx,wy){
   var samples=S.zSamples&&S.zSamples.length?S.zSamples:S.tinPts;
+  // textPoints도 추가 참고 (표고점 정밀도)
+  if(S.textPoints&&S.textPoints.length&&samples!==S.tinPts){
+    // 이미 zSamples에 포함됨
+  }
   if(!samples||!samples.length) return null;
   var best=[];
   for(var i=0;i<samples.length;i++){
@@ -1318,7 +1849,7 @@ function drawSection(id){
   var sl=null;
   for(var i=0;i<S.sections.length;i++){if(String(S.sections[i].id)===id){sl=S.sections[i];break;}}
   if(!sl) return;
-  var N=80, profile=[];
+  var N=200, profile=[];
   var totalD=Math.sqrt(Math.pow(sl.p2.x-sl.p1.x,2)+Math.pow(sl.p2.y-sl.p1.y,2));
   for(var i=0;i<=N;i++){
     var t=i/N;
@@ -1332,6 +1863,9 @@ function drawSection(id){
   var zs=profile.map(function(p){return p.z;});
   var minZ=Math.min.apply(null,zs), maxZ=Math.max.apply(null,zs);
   var maxD=profile[profile.length-1].d;
+  // 고저차가 작으면 여백 추가해서 자연스럽게 표시
+  var zMargin=Math.max((maxZ-minZ)*0.15, 0.5);
+  minZ=minZ-zMargin; maxZ=maxZ+zMargin;
   var zR=maxZ-minZ||1, dR=maxD||1;
   function sx(d){return padL+(d/dR)*(W-padL-padR);}
   function sy(z){return H-padB-((z-minZ)/zR)*(H-padT-padB);}
@@ -1387,7 +1921,25 @@ function updateLayerList(){
 
 // ── EXPORT
 function exportPNG(){
-  var a=document.createElement('a');a.download='terrain_flow.png';a.href=mc.toDataURL('image/png');a.click();notify('PNG 저장됨');
+  // 지도+물흐름+비 효과 모두 합성해서 저장
+  var comp=document.createElement('canvas');
+  comp.width=mc.width; comp.height=mc.height;
+  var cctx=comp.getContext('2d');
+  // 배경
+  cctx.fillStyle='#050810'; cctx.fillRect(0,0,comp.width,comp.height);
+  // 지도 레이어
+  cctx.drawImage(mc,0,0);
+  // 물흐름 레이어
+  var wc=document.getElementById('waterCanvas');
+  if(wc&&wc.style.display!=='none') cctx.drawImage(wc,0,0);
+  // 비 레이어
+  var rc=document.getElementById('rainCanvas');
+  if(rc&&rc.style.display!=='none') cctx.drawImage(rc,0,0);
+  var a=document.createElement('a');
+  a.download='sanrang_terrain.png';
+  a.href=comp.toDataURL('image/png');
+  a.click();
+  notify('PNG 저장됨 (전체 레이어 포함)');
 }
 function exportDXF(){
   // ACI color codes: 4=cyan(FLOW), 3=green(CONTOUR), 1=red(SECTION)
@@ -1426,7 +1978,7 @@ function exportDXF(){
 
     // Arrow head as SOLID (filled quad/triangle in DXF)
     var hl, a1, a2;
-    if(style==='bold'){
+    if(style==='fatdown'||style==='chevron'||style==='bold'){
       hl=dxfLen*0.55; a1=0.55; a2=0.55;
     } else if(style==='thin'){
       hl=dxfLen*0.32; a1=0.5; a2=0.5;
@@ -1631,6 +2183,340 @@ setInterval(function(){
 },8000);
 
 setTool('pan');
+
+// ── TERRAIN FILTER
+// 지형도에서 필요한 레이어만 보이기
+// 등고선/표고점/높이 관련 레이어명 키워드
+var TOPO_KEYWORDS=['등고','contour','elev','표고','topo','height','수치','고도','ting','tnlm','tlm','ctg','b001','b002'];
+var _filterActive=false;
+var _layerVisMap={};  // {layerName: true/false}
+
+function setTerrainFilter(active){
+  _filterActive=active;
+  var info=document.getElementById('filterInfo');
+  var btnAll=document.getElementById('btnShowAll');
+  var btnTopo=document.getElementById('btnShowTopo');
+  if(active){
+    info.style.display='block';
+    btnAll.classList.remove('pri');
+    btnTopo.classList.add('pri');
+  } else {
+    info.style.display='none';
+    btnAll.classList.add('pri');
+    btnTopo.classList.remove('pri');
+  }
+  render();
+}
+
+function isTopoLayer(layerName){
+  if(!layerName) return false;
+  var n=layerName.toLowerCase();
+  for(var i=0;i<TOPO_KEYWORDS.length;i++){
+    if(n.indexOf(TOPO_KEYWORDS[i])>=0) return true;
+  }
+  return false;
+}
+
+function shouldDrawRawLine(rl){
+  if(!_filterActive) return true;
+  // 등고선은 elev!=0 이면 표시
+  if(rl.elev!==0) return true;
+  // 레이어명 기반 필터
+  return isTopoLayer(rl.layer);
+}
+
+
+function applyWaterPreset(v){
+  if(!v) return;
+  document.getElementById('wColor').value=v;
+}
+
+// ══════════════════════════════════════════
+// 🌊 물흐름 시뮬레이션
+// 삼각망 경사를 따라 물방울이 실제로 흘러내려감
+// ══════════════════════════════════════════
+var _waterOn=false;
+var _waterDrops=[];
+var _waterRAF=null;
+var _waterCanvas=null;
+var _waterCtx=null;
+
+function toggleWaterSim(){
+  _waterOn=!_waterOn;
+  S.vis.WaterSim=_waterOn;
+  document.getElementById('togWaterSim').classList.toggle('on',_waterOn);
+  document.getElementById('waterSimControls').style.display=_waterOn?'':'none';
+  if(_waterOn){
+    if(!S.tinPts.length){notify('먼저 지형 분석을 실행하세요','warn');_waterOn=false;document.getElementById('togWaterSim').classList.remove('on');document.getElementById('waterSimControls').style.display='none';return;}
+    initWater();
+    animateWater();
+  } else {
+    if(_waterRAF) cancelAnimationFrame(_waterRAF);
+    if(_waterCanvas){_waterCanvas.style.display='none';_waterCtx.clearRect(0,0,_waterCanvas.width,_waterCanvas.height);}
+  }
+}
+
+function initWater(){
+  if(!_waterCanvas){
+    _waterCanvas=document.getElementById('waterCanvas');
+    _waterCtx=_waterCanvas.getContext('2d');
+  }
+  var ca=document.getElementById('ca');
+  _waterCanvas.width=mc.width||ca.clientWidth;
+  _waterCanvas.height=mc.height||ca.clientHeight;
+  _waterCanvas.style.display='block';
+  _waterCtx.clearRect(0,0,_waterCanvas.width,_waterCanvas.height);
+  waterReset();
+}
+
+function waterReset(){
+  _waterDrops=[];
+  var cnt=parseInt(document.getElementById('wDropCnt').value)||80;
+  // 물방울을 지형 범위 내 랜덤 위치에 생성 (높은 곳에 집중)
+  for(var i=0;i<cnt;i++){
+    _waterDrops.push(newWaterDrop());
+  }
+}
+
+function newWaterDrop(){
+  if(!S.bounds||!S.tinPts.length) return {wx:0,wy:0,z:0,trail:[],dead:true,life:0,maxLife:1};
+  var b=S.bounds;
+  // 삼각망 내부 랜덤 점 (실제 삼각형 꼭짓점 근방에서 시작)
+  var pts=S.tinPts;
+  // 랜덤 삼각형에서 랜덤 점 선택
+  var randomPt=pts[Math.floor(Math.random()*pts.length)];
+  var jitter=(b.maxX-b.minX)*0.02;
+  var wx=randomPt.x+(Math.random()-0.5)*jitter;
+  var wy=randomPt.y+(Math.random()-0.5)*jitter;
+  var wz=getZ(wx,wy);
+  if(wz===null){ wz=randomPt.z; }
+  return {
+    wx:wx, wy:wy,
+    z: wz,
+    trail:[], dead:false,
+    life:0,
+    maxLife:60+Math.floor(Math.random()*100)
+  };
+}
+
+function animateWater(){
+  if(!_waterOn) return;
+  var W=_waterCanvas.width, H=_waterCanvas.height;
+  var speed=(parseInt(document.getElementById('wSpeed').value)||3)*0.5;
+  var tailLen=parseInt(document.getElementById('wTail').value)||18;
+  var alpha=(parseInt(document.getElementById('wAlpha').value)||75)/100;
+  var col=document.getElementById('wColor').value||'#00aaff';
+  var r2=parseInt(col.substr(1,2),16), g2=parseInt(col.substr(3,2),16), b2=parseInt(col.substr(5,2),16);
+
+  // 페이드 아웃: 이전 프레임을 서서히 지우기 (지도 캔버스 건드리지 않음)
+  _waterCtx.globalCompositeOperation='destination-out';
+  _waterCtx.fillStyle='rgba(0,0,0,0.12)';
+  _waterCtx.fillRect(0,0,W,H);
+  _waterCtx.globalCompositeOperation='source-over';
+
+  for(var i=0;i<_waterDrops.length;i++){
+    var d=_waterDrops[i];
+    if(d.dead){
+      _waterDrops[i]=newWaterDrop();
+      continue;
+    }
+
+    // 현재 위치의 삼각형에서 경사 방향(downhill) 계산
+    var pts=S.tinPts, tris=S.tris;
+    var bestTri=null, bestDx=0, bestDy=0, foundTri=false;
+
+    for(var ti=0;ti<tris.length;ti++){
+      var t=tris[ti]; if(t.del) continue;
+      var A=pts[t.a], B=pts[t.b], C=pts[t.c];
+      // 바리센트릭으로 삼각형 안에 있는지 확인
+      var denom=((B.y-C.y)*(A.x-C.x)+(C.x-B.x)*(A.y-C.y));
+      if(Math.abs(denom)<1e-10) continue;
+      var u=((B.y-C.y)*(d.wx-C.x)+(C.x-B.x)*(d.wy-C.y))/denom;
+      var v=((C.y-A.y)*(d.wx-C.x)+(A.x-C.x)*(d.wy-C.y))/denom;
+      var w=1-u-v;
+      if(u>=-0.01&&v>=-0.01&&w>=-0.01){
+        // 이 삼각형의 경사 방향
+        var ux=B.x-A.x, uy=B.y-A.y, uz=B.z-A.z;
+        var vx=C.x-A.x, vy=C.y-A.y, vz=C.z-A.z;
+        var nz=ux*vy-uy*vx;
+        if(Math.abs(nz)<1e-8) continue;
+        var nx=uy*vz-uz*vy, ny=uz*vx-ux*vz;
+        bestDx=nx/nz; bestDy=ny/nz; // downhill
+        foundTri=true;
+        break;
+      }
+    }
+
+    if(!foundTri){
+      d.dead=true; continue;
+    }
+
+    var mag=Math.sqrt(bestDx*bestDx+bestDy*bestDy);
+    if(mag<1e-6){ d.dead=true; continue; }
+    bestDx/=mag; bestDy/=mag;
+
+    // 화면 좌표로 이동
+    var sp=w2s(d.wx, d.wy);
+    d.trail.push({x:sp.x, y:sp.y, z:d.z});
+    if(d.trail.length>tailLen) d.trail.shift();
+
+    // 지형 좌표 이동 (speed를 스케일에 맞게)
+    var moveAmt=speed/S.scale*3;
+    d.wx+=bestDx*moveAmt;
+    d.wy+=bestDy*moveAmt;
+
+    // 새 고도
+    var newZ=getZ(d.wx,d.wy);
+    if(newZ===null||newZ>d.z+2){d.dead=true;continue;} // 위로 올라가면 죽음
+    d.z=newZ;
+    d.life++;
+
+    // 수명 다했거나 경계 벗어나면 죽음
+    var newSp=w2s(d.wx,d.wy);
+    if(d.life>d.maxLife||newSp.x<-20||newSp.x>W+20||newSp.y<-20||newSp.y>H+20){
+      d.dead=true; continue;
+    }
+
+    // 꼬리 그리기
+    if(d.trail.length<2) continue;
+    for(var ti2=1;ti2<d.trail.length;ti2++){
+      var t0=d.trail[ti2-1], t1=d.trail[ti2];
+      var prog=ti2/d.trail.length;
+      var a2=alpha*prog*0.9;
+      var wSz=parseFloat(document.getElementById('wSize')?document.getElementById('wSize').value:2)||2;
+      var w2=(0.4+prog*0.9)*wSz;
+      _waterCtx.strokeStyle='rgba('+r2+','+g2+','+b2+','+a2.toFixed(2)+')';
+      _waterCtx.lineWidth=w2;
+      _waterCtx.lineCap='round';
+      _waterCtx.beginPath();
+      _waterCtx.moveTo(t0.x,t0.y);
+      _waterCtx.lineTo(t1.x,t1.y);
+      _waterCtx.stroke();
+    }
+    // 머리 (밝은 점) - wSize 적용
+    var head=d.trail[d.trail.length-1];
+    var wSizeVal=parseFloat(document.getElementById('wSize')?document.getElementById('wSize').value:2)||2;
+    _waterCtx.fillStyle='rgba('+Math.min(255,r2+80)+','+Math.min(255,g2+80)+','+Math.min(255,b2+80)+','+alpha+')';
+    _waterCtx.beginPath();
+    _waterCtx.arc(head.x,head.y,wSizeVal,0,Math.PI*2);
+    _waterCtx.fill();
+  }
+
+  _waterRAF=requestAnimationFrame(animateWater);
+}
+
+// 창 크기 변경 시 물 캔버스 리사이즈
+window.addEventListener('resize',function(){
+  if(_waterCanvas&&_waterOn){
+    var ca=document.getElementById('ca');
+    _waterCanvas.width=ca.clientWidth;
+    _waterCanvas.height=ca.clientHeight;
+  }
+});
+
+// ── RAIN EFFECT
+var _rainOn=false;
+var _rainDrops=[];
+var _rainRAF=null;
+var _rainCanvas=null;
+var _rainCtx=null;
+
+function toggleRain(){
+  _rainOn=!_rainOn;
+  document.getElementById('togRain').classList.toggle('on',_rainOn);
+  document.getElementById('rainControls').style.display=_rainOn?'':'none';
+  if(_rainOn){
+    initRain();
+    animateRain();
+  } else {
+    if(_rainRAF) cancelAnimationFrame(_rainRAF);
+    _rainCanvas.style.display='none';
+    _rainCanvas.getContext('2d').clearRect(0,0,_rainCanvas.width,_rainCanvas.height);
+  }
+}
+
+function initRain(){
+  if(!_rainCanvas){
+    _rainCanvas=document.getElementById('rainCanvas');
+    _rainCtx=_rainCanvas.getContext('2d');
+  }
+  var ca=document.getElementById('ca');
+  _rainCanvas.width=ca.clientWidth;
+  _rainCanvas.height=ca.clientHeight;
+  _rainCanvas.style.display='block';
+  rainReset();
+}
+
+function rainReset(){
+  if(!_rainCanvas) return;
+  var cnt=parseInt(document.getElementById('rainCnt').value)||150;
+  _rainDrops=[];
+  for(var i=0;i<cnt;i++){
+    _rainDrops.push(newDrop(true));
+  }
+}
+
+function newDrop(randomY){
+  var wind=parseInt(document.getElementById('rainWind').value)||0;
+  var W=_rainCanvas?_rainCanvas.width:800;
+  var H=_rainCanvas?_rainCanvas.height:600;
+  return {
+    x: Math.random()*W*1.3 - W*0.15,
+    y: randomY ? Math.random()*H : -10,
+    speed: (Math.random()*0.5+0.7),
+    wind: wind
+  };
+}
+
+function animateRain(){
+  if(!_rainOn){return;}
+  var W=_rainCanvas.width, H=_rainCanvas.height;
+  var speed=parseInt(document.getElementById('rainSpeed').value)||5;
+  var len=parseInt(document.getElementById('rainLen').value)||18;
+  var alpha=(parseInt(document.getElementById('rainAlpha').value)||60)/100;
+  var wind=parseInt(document.getElementById('rainWind').value)||0;
+  var col=document.getElementById('rainColor').value||'#aad4ff';
+  // hex → rgb
+  var r=parseInt(col.substr(1,2),16), g=parseInt(col.substr(3,2),16), b=parseInt(col.substr(5,2),16);
+
+  _rainCtx.clearRect(0,0,W,H);
+
+  // 바람 각도
+  var windRad=wind*Math.PI/180;
+  var vx=Math.sin(windRad)*speed*0.6;
+  var vy=Math.cos(windRad)*speed;
+
+  _rainCtx.strokeStyle='rgba('+r+','+g+','+b+','+alpha+')';
+  _rainCtx.lineWidth=1.1;
+  _rainCtx.lineCap='round';
+
+  for(var i=0;i<_rainDrops.length;i++){
+    var d=_rainDrops[i];
+    // 그리기
+    _rainCtx.beginPath();
+    _rainCtx.moveTo(d.x, d.y);
+    _rainCtx.lineTo(d.x - vx/vy*len*d.speed, d.y - len*d.speed);
+    _rainCtx.stroke();
+    // 이동
+    d.x += vx*d.speed;
+    d.y += vy*d.speed;
+    // 화면 밖 → 리셋
+    if(d.y>H+10 || d.x<-W*0.2 || d.x>W*1.2){
+      _rainDrops[i]=newDrop(false);
+      _rainDrops[i].x = (wind>0)?(Math.random()*W):(Math.random()*W*1.3-W*0.15);
+    }
+  }
+  _rainRAF=requestAnimationFrame(animateRain);
+}
+
+// 창 크기 변경 시 비 캔버스 리사이즈
+window.addEventListener('resize',function(){
+  if(_rainCanvas&&_rainOn){
+    var ca=document.getElementById('ca');
+    _rainCanvas.width=ca.clientWidth;
+    _rainCanvas.height=ca.clientHeight;
+  }
+});
 
 // ── CANVAS DRAG & DROP
 var ca=document.getElementById('ca');

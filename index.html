@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>물아 흘러라</title>
+<title>FlowFree</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Black+Han+Sans&display=swap');
 :root{--bg:#0a0e1a;--panel:#111827;--panel2:#1a2235;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff9f;--accent3:#ff6b35;--text:#e2e8f0;--dim:#64748b;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-header{display:flex;align-items:center;gap:12px;padding:0 18px;background:var(--panel);border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#0a0e1a,#00d4ff,#00ff9f,#0a0e1a) 1;flex-shrink:0;height:52px;position:relative;overflow:hidden;}
+header{display:flex;align-items:center;gap:12px;padding:0 14px;background:linear-gradient(90deg,#050c18,#0a1628,#050c18);border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#0a0e1a,#00d4ff,#00ff9f,#0a0e1a) 1;flex-shrink:0;height:56px;position:relative;overflow:hidden;}
+.logo-img{width:42px;height:42px;object-fit:contain;animation:logopulse 3s ease-in-out infinite;}
+@keyframes logopulse{0%,100%{opacity:0.85;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+.hversion{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,212,255,0.5);letter-spacing:1px;margin-left:4px;align-self:flex-end;margin-bottom:8px;}
 header::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.04) 50%,transparent 100%);animation:hshine 4s ease-in-out infinite;}
 @keyframes hshine{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
 .htitle{display:flex;align-items:center;gap:0;position:relative;}
-.htitle h1{font-family:'Black Han Sans',sans-serif;font-size:22px;font-weight:400;letter-spacing:2px;background:linear-gradient(90deg,#00d4ff,#00ff9f,#00d4ff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:flowtext 3s linear infinite,titlein .6s ease both;}
+.htitle h1{font-family:'Black Han Sans',sans-serif;font-size:26px;font-weight:400;letter-spacing:2px;background:linear-gradient(90deg,#00d4ff,#00ff9f,#00d4ff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:flowtext 3s linear infinite,titlein .6s ease both;}
 @keyframes flowtext{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 @keyframes titlein{from{opacity:0;transform:translateY(-8px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .htitle .wave{font-size:13px;color:var(--accent);font-family:'JetBrains Mono',monospace;opacity:0.6;margin-left:10px;animation:wavepulse 2s ease-in-out infinite;}
@@ -117,7 +120,20 @@ select:focus{border-color:var(--accent);}
 <body>
 <header>
   <div class="htitle">
-    <h1>물아 흘러라</h1>
+    <svg class="logo-img" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Water drop body -->
+  <path d="M21 4 C21 4 9 18 9 25 C9 32.7 14.4 38 21 38 C27.6 38 33 32.7 33 25 C33 18 21 4 21 4Z" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+  <!-- Inner highlight -->
+  <path d="M21 10 C21 10 13 21 13 26 C13 30.4 16.6 34 21 34 C25.4 34 29 30.4 29 26 C29 21 21 10 21 10Z" fill="#111"/>
+  <!-- Flow arrow lines -->
+  <line x1="15" y1="26" x2="27" y2="26" stroke="#555" stroke-width="1.8" stroke-linecap="round"/>
+  <polyline points="23,22 27,26 23,30" fill="none" stroke="#555" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Ripple arcs at bottom -->
+  <path d="M12 35 Q21 39 30 35" stroke="#333" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M9 38 Q21 43 33 38" stroke="#2a2a2a" stroke-width="1" fill="none" stroke-linecap="round"/>
+</svg>
+    <h1>FlowFree</h1>
+    <span class="hversion">v1.0</span>
     <span class="wave">〰〰〰〰〰</span>
   </div>
   <div class="hsp"></div>
@@ -180,6 +196,7 @@ select:focus{border-color:var(--accent);}
         <div class="slrow">
           <label style="margin-bottom:4px">화살표 모양</label>
           <select id="arrowStyle" onchange="render()">
+            <option value="cad">🏗 CAD형 (실선+채움 헤드)</option>
             <option value="classic">▶ 클래식 (채움 삼각형)</option>
             <option value="open">➤ 오픈 V형</option>
             <option value="thin">→ 얇은 선형</option>
@@ -243,7 +260,7 @@ select:focus{border-color:var(--accent);}
       <h2>DXF 파일을 업로드하세요</h2>
       <p>등고선이 포함된 수치지형도 DXF 파일을<br>업로드하거나 샘플 데이터를 사용해보세요</p>
     </div>
-    <div class="author-badge">작성자 : <span>유영대</span></div>
+    
     <div class="minfo">
       X: <span id="cx">-</span> Y: <span id="cy">-</span><br>
       고도: <span id="cz">-</span>m<br>
@@ -284,7 +301,7 @@ select:focus{border-color:var(--accent);}
         <div class="usage-step"><span class="step-num">3</span><span>단면선 그리기<br><em>두 점 클릭으로 단면 생성</em></span></div>
         <div class="usage-step"><span class="step-num">4</span><span>DXF / PNG 저장<br><em>화살표·색상 포함 저장</em></span></div>
       </div>
-      <div class="author-rp">작성자 <span>유영대</span></div>
+      
     </div>
   </div>
 </div>
@@ -706,59 +723,115 @@ function runAnalysis(){
   },10);
 }
 
-// ── BOWYER-WATSON
+// ── CONSTRAINED DELAUNAY TRIANGULATION (CDT)
+// 기존 Bowyer-Watson → 등고선 제약 간선 삽입 방식으로 교체
+// 경사도 방향 오류(Y축 반전) 방지
 function orient2(A,B,C){
   return (B.x-A.x)*(C.y-A.y)-(B.y-A.y)*(C.x-A.x);
 }
-
+function segsIntersect(p1,p2,p3,p4){
+  var d1=orient2(p3,p4,p1),d2=orient2(p3,p4,p2);
+  var d3=orient2(p1,p2,p3),d4=orient2(p1,p2,p4);
+  if(((d1>0&&d2<0)||(d1<0&&d2>0))&&((d3>0&&d4<0)||(d3<0&&d4>0))) return true;
+  return false;
+}
+function edgeExists(tris,ai,bi){
+  for(var i=0;i<tris.length;i++){
+    var t=tris[i]; if(t.del) continue;
+    if((t.a===ai&&t.b===bi)||(t.b===ai&&t.a===bi)||
+       (t.b===ai&&t.c===bi)||(t.c===ai&&t.b===bi)||
+       (t.a===ai&&t.c===bi)||(t.c===ai&&t.a===bi)) return true;
+  }
+  return false;
+}
+function insertConstraint(tris,pts,ai,bi){
+  if(edgeExists(tris,ai,bi)) return;
+  var iter=0;
+  while(!edgeExists(tris,ai,bi)&&iter<80){
+    iter++;
+    var A=pts[ai],B=pts[bi],flipped=false;
+    for(var ti=0;ti<tris.length;ti++){
+      var t=tris[ti]; if(t.del) continue;
+      var verts=[t.a,t.b,t.c];
+      for(var ei=0;ei<3;ei++){
+        var u=verts[ei],v=verts[(ei+1)%3];
+        if(u===ai||u===bi||v===ai||v===bi) continue;
+        if(!segsIntersect(A,B,pts[u],pts[v])) continue;
+        var adj=-1;
+        for(var tj=0;tj<tris.length;tj++){
+          if(tj===ti||tris[tj].del) continue;
+          var tv=tris[tj];
+          if((tv.a===u||tv.b===u||tv.c===u)&&(tv.a===v||tv.b===v||tv.c===v)){adj=tj;break;}
+        }
+        if(adj<0) continue;
+        var wa=tris[adj],w3=-1,w4=-1;
+        [wa.a,wa.b,wa.c].forEach(function(x){if(x!==u&&x!==v)w3=x;});
+        [t.a,t.b,t.c].forEach(function(x){if(x!==u&&x!==v)w4=x;});
+        if(w3<0||w4<0) continue;
+        if(orient2(pts[u],pts[w3],pts[v])*orient2(pts[u],pts[w4],pts[v])>=0) continue;
+        tris[ti].del=true; tris[adj].del=true;
+        var nt1={a:u,b:w3,c:w4,del:false},nt2={a:v,b:w4,c:w3,del:false};
+        if(orient2(pts[nt1.a],pts[nt1.b],pts[nt1.c])<0){var tmp=nt1.b;nt1.b=nt1.c;nt1.c=tmp;}
+        if(orient2(pts[nt2.a],pts[nt2.b],pts[nt2.c])<0){var tmp=nt2.b;nt2.b=nt2.c;nt2.c=tmp;}
+        tris.push(nt1,nt2); flipped=true; break;
+      }
+      if(flipped) break;
+    }
+    if(!flipped) break;
+  }
+}
 function bowyer(pts){
   var n=pts.length;
-  var xs=pts.map(function(p){return p.x;}), ys=pts.map(function(p){return p.y;});
-  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
-  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
-  var dx=maxX-minX, dy=maxY-minY, d=Math.max(dx,dy)*10;
-  var mx=(minX+maxX)/2, my=(minY+maxY)/2;
-  var all=pts.concat([
-    {x:mx-d,y:my-d,z:0},
-    {x:mx,y:my+d*2,z:0},
-    {x:mx+d*2,y:my-d,z:0}
-  ]);
-  var s0=n, s1=n+1, s2=n+2;
+  var xs=pts.map(function(p){return p.x;}),ys=pts.map(function(p){return p.y;});
+  var minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);
+  var dx=maxX-minX,dy=maxY-minY,d=Math.max(dx,dy)*10;
+  var mx=(minX+maxX)/2,my=(minY+maxY)/2;
+  var all=pts.concat([{x:mx-d,y:my-d,z:0},{x:mx,y:my+d*2,z:0},{x:mx+d*2,y:my-d,z:0}]);
+  var s0=n,s1=n+1,s2=n+2;
   var tris=[{a:s0,b:s1,c:s2,del:false}];
-
+  // 1단계: 기본 Delaunay
   for(var pi=0;pi<n;pi++){
-    var p=all[pi];
-    var edges=[];
+    var p=all[pi],edges=[];
     for(var ti=0;ti<tris.length;ti++){
-      var t=tris[ti];
-      if(t.del) continue;
+      var t=tris[ti]; if(t.del) continue;
       if(inCirc(all[t.a],all[t.b],all[t.c],p)){
-        t.del=true;
-        edges.push([t.a,t.b],[t.b,t.c],[t.c,t.a]);
+        t.del=true; edges.push([t.a,t.b],[t.b,t.c],[t.c,t.a]);
       }
     }
-
     var edgeCount={};
     for(var ei=0;ei<edges.length;ei++){
-      var u=edges[ei][0], v=edges[ei][1];
-      var a=Math.min(u,v), b=Math.max(u,v);
-      var k=a+','+b;
+      var u=edges[ei][0],v=edges[ei][1],a=Math.min(u,v),b=Math.max(u,v),k=a+','+b;
       edgeCount[k]=(edgeCount[k]||0)+1;
     }
-
     for(var bi=0;bi<edges.length;bi++){
-      var u=edges[bi][0], v=edges[bi][1];
-      var a=Math.min(u,v), b=Math.max(u,v);
-      var k=a+','+b;
+      var u=edges[bi][0],v=edges[bi][1],a=Math.min(u,v),b=Math.max(u,v),k=a+','+b;
       if(edgeCount[k]!==1) continue;
       var tri={a:u,b:v,c:pi,del:false};
-      if(orient2(all[tri.a],all[tri.b],all[tri.c])<0){
-        var tmp=tri.a; tri.a=tri.b; tri.b=tmp;
-      }
+      if(orient2(all[tri.a],all[tri.b],all[tri.c])<0){var tmp=tri.a;tri.a=tri.b;tri.b=tmp;}
       tris.push(tri);
     }
   }
-
+  // 2단계: 등고선 제약 간선 삽입 (Constrained)
+  var constraintCount=0;
+  for(var ci=0;ci<S.contours.length&&constraintCount<600;ci++){
+    var c=S.contours[ci];
+    var step=Math.max(1,Math.floor(c.pts.length/8));
+    for(var pi2=0;pi2<c.pts.length-step&&constraintCount<600;pi2+=step){
+      var px1=c.pts[pi2].x,py1=c.pts[pi2].y;
+      var px2=c.pts[pi2+step].x,py2=c.pts[pi2+step].y;
+      var idx1=-1,idx2=-1,bestD1=Infinity,bestD2=Infinity;
+      for(var k=0;k<n;k++){
+        var d1=(pts[k].x-px1)*(pts[k].x-px1)+(pts[k].y-py1)*(pts[k].y-py1);
+        var d2=(pts[k].x-px2)*(pts[k].x-px2)+(pts[k].y-py2)*(pts[k].y-py2);
+        if(d1<bestD1){bestD1=d1;idx1=k;}
+        if(d2<bestD2){bestD2=d2;idx2=k;}
+      }
+      if(idx1>=0&&idx2>=0&&idx1!==idx2&&bestD1<1&&bestD2<1){
+        insertConstraint(tris,all,idx1,idx2); constraintCount++;
+      }
+    }
+  }
   var result=[];
   for(var ti=0;ti<tris.length;ti++){
     var t=tris[ti];
@@ -789,7 +862,7 @@ function calcArrows(){
     var nz=ux*vy-uy*vx;
     if(Math.abs(nz)<1e-8) continue;
     var nx=uy*vz-uz*vy, ny=uz*vx-ux*vz;
-    // downhill direction
+    // downhill direction (= -gradient = +N_xy/Nz)
     var dx=nx/nz, dy=ny/nz;
     var mag=Math.sqrt(dx*dx+dy*dy);
     if(mag<1e-6) continue;
@@ -936,7 +1009,7 @@ function render(){
       if(ai%skip!==0) continue;
       var a=S.arrows[ai], s=w2s(a.x,a.y);
       if(s.x<-30||s.x>mc.width+30||s.y<-30||s.y>mc.height+30) continue;
-      drawArrow(s.x,s.y,a.dx,-a.dy,alen);
+      drawArrow(s.x,s.y,a.dx,a.dy,alen);
     }
   }
   // Sections
@@ -983,7 +1056,16 @@ function drawArrow(x,y,dx,dy,len){
   var ex=x+dx*len, ey=y+dy*len;
   var ang=Math.atan2(dy,dx);
 
-  if(style==='classic'){
+  if(style==='cad'){
+    // CAD형: 실선 줄기 + 넓고 짧은 채움 삼각형 (사진 스타일)
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+    var hl=len*0.5, hw=0.55;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-hl*Math.cos(ang-hw),ey-hl*Math.sin(ang-hw));
+    ctx.lineTo(ex-hl*Math.cos(ang+hw),ey-hl*Math.sin(ang+hw));
+    ctx.closePath();ctx.fill();
+  } else if(style==='classic'){
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
     var hl=len*0.42;
     ctx.beginPath();ctx.moveTo(ex,ey);
